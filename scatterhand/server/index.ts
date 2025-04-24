@@ -34,8 +34,8 @@ const viteDevServer = IS_PROD
 const app = express()
 const httpServer = createServer(app)
 
-// Initialize Socket.IO
-initializeSocketIO(httpServer)
+// Initialize Socket.IO with the HTTP server
+const io = initializeSocketIO(httpServer)
 
 const getHost = (req: { get: (key: string) => string | undefined }) =>
 	req.get('X-Forwarded-Host') ?? req.get('host') ?? ''

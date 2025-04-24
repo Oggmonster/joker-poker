@@ -11,11 +11,9 @@ import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { login, requireAnonymous } from '#app/utils/auth.server.ts'
 import { checkHoneypot } from '#app/utils/honeypot.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
-import { useSocket } from '#app/utils/useSocket'
 import { PasswordSchema, UsernameSchema } from '#app/utils/user-validation.ts'
 import { type Route } from './+types/login.ts'
 import { handleNewSession } from './login.server.ts'
-import { useEffect } from 'react'
 
 export const handle: SEOHandle = {
 	getSitemapEntries: () => null,
@@ -60,8 +58,8 @@ export async function action({ request }: Route.ActionArgs) {
 		return { submission: submission.reply({ hideFields: ['password'] }) }
 	}
 
-	const { session, remember, redirectTo } = submission.value
-
+	const { session, remember, redirectTo } = submission.value	
+	
 	return handleNewSession({
 		request,
 		session,
@@ -72,7 +70,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function LoginPage({ actionData }: Route.ComponentProps) {
 	const isPending = useIsPending()
-	const { emit, isConnected } = useSocket()
+	
 	const navigate = useNavigate()
 
 	const [form, fields] = useForm({
@@ -94,23 +92,7 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
 		},
 	})
 
-	// Log socket connection status
-	useEffect(() => {
-		console.log('Login - Socket connected:', isConnected)
-	}, [isConnected])
-
-	// Emit login event when the form is submitted successfully
-	useEffect(() => {
-		if (form.status === 'success' && !actionData?.submission) {
-			console.log('Form success, checking username')
-			const username = window.sessionStorage.getItem('lastUsername')
-			if (username) {
-				console.log('Emitting login event for:', username)
-				emit('user:login', { username })
-				window.sessionStorage.removeItem('lastUsername')
-			}
-		}
-	}, [form.status, actionData?.submission, emit])
+	
 
 	return (
 		<div className="flex min-h-full flex-col justify-center pb-32 pt-20" data-socket-component>
@@ -122,6 +104,7 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
 					</p>
 				</div>
 				<Spacer size="xs" />
+				
 
 				<div>
 					<div className="mx-auto w-full max-w-md px-8">

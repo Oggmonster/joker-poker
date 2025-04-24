@@ -1,6 +1,7 @@
 import { Server } from 'socket.io'
 import type { Server as HTTPServer } from 'http'
 import type { Socket } from 'socket.io'
+import { da } from '@faker-js/faker'
 
 let io: Server | null = null
 
@@ -24,10 +25,9 @@ export function initializeSocketIO(httpServer: HTTPServer) {
             console.log('Client disconnected:', socket.id)
         })
 
-        socket.on('user:login', (data) => {
-            console.log('User login event received:', data)
-            // Broadcast to all clients except sender
-            socket.broadcast.emit('user:login', data)
+        socket.on('hello', (data: { message: string }) => {
+            console.log('Received hello:', data)
+            socket.broadcast.emit('welcome', { message: data.message })
         })
     })
 

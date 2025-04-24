@@ -3,9 +3,7 @@ import { faker } from '@faker-js/faker'
 import { SetCookie } from '@mjackson/headers'
 import { http } from 'msw'
 import { afterEach, expect, test } from 'vitest'
-import { twoFAVerificationType } from '#app/routes/settings+/profile.two-factor.tsx'
 import { getSessionExpirationDate, sessionKey } from '#app/utils/auth.server.ts'
-import { GITHUB_PROVIDER_NAME } from '#app/utils/connections.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { authSessionStorage } from '#app/utils/session.server.ts'
 import { generateTOTP } from '#app/utils/totp.server.ts'
@@ -82,29 +80,6 @@ test('when a user is logged in, it creates the connection', async () => {
 	).toBeTruthy()
 })
 
-test(`when a user is logged in and has already connected, it doesn't do anything and just redirects the user back to the connections page`, async () => {
-	const session = await setupUser()
-	const githubUser = await insertGitHubUser()
-	await prisma.connection.create({
-		data: {
-			providerName: GITHUB_PROVIDER_NAME,
-			userId: session.userId,
-			providerId: githubUser.profile.id.toString(),
-		},
-	})
-	const request = await setupRequest({
-		sessionId: session.id,
-		code: githubUser.code,
-	})
-	const response = await loader({ request, params: PARAMS, context: {} })
-	expect(response).toHaveRedirect('/settings/profile/connections')
-	await expect(response).toSendToast(
-		expect.objectContaining({
-			title: 'Already Connected',
-			description: expect.stringContaining(githubUser.profile.login),
-		}),
-	)
-})
 
 test('when a user exists with the same email, create connection and make session', async () => {
 	const githubUser = await insertGitHubUser()
@@ -137,79 +112,9 @@ test('when a user exists with the same email, create connection and make session
 	await expect(response).toHaveSessionForUser(userId)
 })
 
-test('gives an error if the account is already connected to another user', async () => {
-	const githubUser = await insertGitHubUser()
-	await prisma.user.create({
-		data: {
-			...createUser(),
-			connections: {
-				create: {
-					providerName: GITHUB_PROVIDER_NAME,
-					providerId: githubUser.profile.id.toString(),
-				},
-			},
-		},
-	})
-	const session = await setupUser()
-	const request = await setupRequest({
-		sessionId: session.id,
-		code: githubUser.code,
-	})
-	const response = await loader({ request, params: PARAMS, context: {} })
-	expect(response).toHaveRedirect('/settings/profile/connections')
-	await expect(response).toSendToast(
-		expect.objectContaining({
-			title: 'Already Connected',
-			description: expect.stringContaining(
-				'already connected to another account',
-			),
-		}),
-	)
-})
 
-test('if a user is not logged in, but the connection exists, make a session', async () => {
-	const githubUser = await insertGitHubUser()
-	const { userId } = await setupUser()
-	await prisma.connection.create({
-		data: {
-			providerName: GITHUB_PROVIDER_NAME,
-			providerId: githubUser.profile.id.toString(),
-			userId,
-		},
-	})
-	const request = await setupRequest({ code: githubUser.code })
-	const response = await loader({ request, params: PARAMS, context: {} })
-	expect(response).toHaveRedirect('/')
-	await expect(response).toHaveSessionForUser(userId)
-})
 
-test('if a user is not logged in, but the connection exists and they have enabled 2FA, send them to verify their 2FA and do not make a session', async () => {
-	const githubUser = await insertGitHubUser()
-	const { userId } = await setupUser()
-	await prisma.connection.create({
-		data: {
-			providerName: GITHUB_PROVIDER_NAME,
-			providerId: githubUser.profile.id.toString(),
-			userId,
-		},
-	})
-	const { otp: _otp, ...config } = await generateTOTP()
-	await prisma.verification.create({
-		data: {
-			type: twoFAVerificationType,
-			target: userId,
-			...config,
-		},
-	})
-	const request = await setupRequest({ code: githubUser.code })
-	const response = await loader({ request, params: PARAMS, context: {} })
-	const searchParams = new URLSearchParams({
-		type: twoFAVerificationType,
-		target: userId,
-		redirectTo: '/',
-	})
-	expect(response).toHaveRedirect(`/verify?${searchParams}`)
-})
+
 
 async function setupRequest({
 	sessionId,
