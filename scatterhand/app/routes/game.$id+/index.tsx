@@ -9,25 +9,41 @@ import { ScoringDisplay } from '#app/components/game/scoring-display'
 import { RoundResults } from '#app/components/game/round-results'
 import { cn } from '#app/utils/cn'
 import { GameSection, GameState, PlayerAction } from '#app/domain/game-state'
+import { type Route } from './+types/index.ts'
+import { useLoaderData } from 'react-router'
+
+const mockPlayers: Player[] = [
+    new Player('1', 'Player 1', 0, true),
+    new Player('2', 'Player 2', 1, true),
+    new Player('3', 'Player 3', 2, true),
+    new Player('4', 'Player 4', 3, true),
+    new Player('5', 'Player 5', 4, true),
+    new Player('6', 'Martin', 5, false),
+]
+
+export async function loader({ params, request }: Route.LoaderArgs) {
+	const playerNames = ["Kalle", "Leffe", "Martin", "Olle", "Pelle", "Stina"]
+	return { gameId: params.id, playerNames: playerNames }
+}
+
+export const meta: Route.MetaFunction = ({ data }) => [{ title: `Scatterhand - Game ${data.gameId}` }]
 
 const SECTION_TIME_LIMIT = 30 // seconds
 
 /**
  * Main game route component
  */
-export default function GameRoute() {
+export default function GameRoute({ loaderData }: Route.ComponentProps) { 
     const [gameState, setGameState] = useState<GameState | null>(null)
     const [timeRemaining, setTimeRemaining] = useState(SECTION_TIME_LIMIT)
     const [pendingActions, setPendingActions] = useState<PlayerAction[]>([])
     const [playerScores, setPlayerScores] = useState<Record<string, number>>({})
 
-    // Load initial game state
+    //set mock game state
     useEffect(() => {
-        // TODO: Load game state from server/local storage
-        // For now, we'll create a mock game state
         const mockGameState: GameState = {
-            id: 'test-game',
-            players: [], // TODO: Initialize with bot players
+            id: loaderData.gameId,
+            players: mockPlayers,
             currentSection: 'DISCARD',
             sectionActions: [],
             communityCards: [],
@@ -41,7 +57,7 @@ export default function GameRoute() {
         setGameState(mockGameState)
     }, [])
 
-    // Handle section timer
+    // // Handle section timer
     useEffect(() => {
         if (!gameState || gameState.isComplete) return
 
@@ -59,6 +75,7 @@ export default function GameRoute() {
         return () => clearInterval(timer)
     }, [gameState])
 
+   
     // Process all actions at the end of a section
     const processSectionEnd = useCallback(() => {
         if (!gameState) return
@@ -92,12 +109,22 @@ export default function GameRoute() {
         setPendingActions(prev => [...prev, action])
     }, [])
 
+    
     if (!gameState) {
-        return <div>Loading game...</div>
+        return <div>Loading...</div>
     }
 
     return (
         <div className="flex flex-col h-full gap-4 p-4">
+
+            <div className='flex-1'>
+                <ul>
+                    {gameState.players.map(player => (
+                        <li key={player.id}>{player.name}</li>
+                    ))}
+                </ul>
+            </div>
+           
             {/* Game Board */}
             <div className="flex-1">
                 <GameBoard
