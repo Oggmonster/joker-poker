@@ -1,59 +1,28 @@
-import { BaseJoker, JokerRarity } from '#app/domain/joker'
-import { BaseSelectable, BaseSelectableProps } from './base-selectable'
+import { BaseJoker } from '#app/domain/joker'
 import { cn } from '#app/utils/cn'
 
-interface JokerProps extends Omit<BaseSelectableProps, 'children'> {
+interface JokerProps {
     joker: BaseJoker
-}
-
-const RARITY_COLORS = {
-    [JokerRarity.COMMON]: 'bg-gray-100 border-gray-300',
-    [JokerRarity.UNCOMMON]: 'bg-green-100 border-green-300',
-    [JokerRarity.RARE]: 'bg-blue-100 border-blue-300',
-    [JokerRarity.LEGENDARY]: 'bg-purple-100 border-purple-300',
-    [JokerRarity.UNIQUE]: 'bg-yellow-100 border-yellow-300',
-}
-
-const RARITY_TEXT_COLORS = {
-    [JokerRarity.COMMON]: 'text-gray-700',
-    [JokerRarity.UNCOMMON]: 'text-green-700',
-    [JokerRarity.RARE]: 'text-blue-700',
-    [JokerRarity.LEGENDARY]: 'text-purple-700',
-    [JokerRarity.UNIQUE]: 'text-yellow-700',
+    className?: string
 }
 
 /**
- * Joker component that displays a joker card
- * Uses BaseSelectable for selection and hover states
+ * Displays a joker card with its name, rarity, and level
  */
-export function Joker({ joker, className, ...props }: JokerProps) {
-    const rarityColor = RARITY_COLORS[joker.rarity]
-    const rarityTextColor = RARITY_TEXT_COLORS[joker.rarity]
-
+export function Joker({ joker, className }: JokerProps) {
     return (
-        <BaseSelectable
+        <div 
             className={cn(
-                'w-24 h-36 p-2 border-2',
-                'flex flex-col items-center',
-                rarityColor,
+                'w-12 h-16 bg-purple-800 rounded-lg p-1',
+                'text-white text-xs flex flex-col items-center justify-between',
                 className
             )}
-            {...props}
         >
-            {/* Joker name */}
-            <div className={cn('text-sm font-bold text-center mb-2', rarityTextColor)}>
-                {joker.name}
+            <div className="font-bold text-center">{joker.name}</div>
+            <div className="text-center">
+                <div>{joker.rarity}</div>
+                <div>Lvl {joker.level}</div>
             </div>
-
-            {/* Level indicator */}
-            <div className={cn('text-xs mb-2', rarityTextColor)}>
-                Level {joker.level}
-            </div>
-
-            {/* Effect description */}
-            <div className="text-xs text-center flex-1">
-                {joker.effect}
-            </div>
-        </BaseSelectable>
+        </div>
     )
 } 

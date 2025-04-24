@@ -1,17 +1,19 @@
 import { Card } from '#app/domain/cards'
 import { BaseJoker } from '#app/domain/joker'
-import { Player, PlayerStatus } from '#app/domain/player'
+import { Player } from '#app/domain/player'
 import { RoundPhase } from '#app/domain/round-state'
 import { cn } from '#app/utils/cn'
-import { Joker } from './joker'
-import { PlayerInfo } from './player-info'
+import { CommunityArea } from './community-area'
+import { PlayerArea } from './player-area'
 
 interface GameBoardProps {
     players: Player[]
     activePlayerId: string | null
+    playerCards: Record<string, Card[]>
     communityCards: Card[]
     communityJokers: BaseJoker[]
     currentPhase: RoundPhase
+    playerScores: Record<string, number>
     className?: string
 }
 
@@ -56,9 +58,11 @@ function calculatePlayerPositions(numPlayers: number): PlayerPosition[] {
 export function GameBoard({
     players,
     activePlayerId,
+    playerCards,
     communityCards,
     communityJokers,
     currentPhase,
+    playerScores,
     className
 }: GameBoardProps) {
     const positions = calculatePlayerPositions(players.length)
@@ -70,10 +74,11 @@ export function GameBoard({
                 const position = positions[index]
                 if (!position) return null // Skip if no position calculated
                 const isActive = player.getId() === activePlayerId
+                const playerId = player.getId()
 
                 return (
                     <div
-                        key={player.getId()}
+                        key={playerId}
                         className="absolute transform -translate-x-1/2 -translate-y-1/2"
                         style={{
                             left: `${position.x}%`,
@@ -81,11 +86,11 @@ export function GameBoard({
                             transform: `translate(-50%, -50%) rotate(${position.rotation}deg)`
                         }}
                     >
-                        <PlayerInfo
+                        <PlayerArea
                             player={player}
                             isActive={isActive}
-                            roundScore={0} // TODO: Get from game state
-                            status={PlayerStatus.PLAYING} // TODO: Get from game state
+                            cards={playerCards[playerId] || []}
+                            roundScore={playerScores[playerId] || 0}
                         />
                     </div>
                 )
@@ -93,27 +98,11 @@ export function GameBoard({
 
             {/* Community Area */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                {/* Phase Indicator */}
-                <div className="text-center mb-4 text-white font-bold">
-                    {currentPhase}
-                </div>
-
-                {/* Community Cards */}
-                <div className="flex gap-2 mb-4">
-                    {communityCards.map((card, index) => (
-                        <div key={index} className="w-16 h-24">
-                            {/* TODO: Add Card component */}
-                            <div className="bg-white rounded-lg w-full h-full" />
-                        </div>
-                    ))}
-                </div>
-
-                {/* Community Jokers */}
-                <div className="flex gap-2">
-                    {communityJokers.map((joker, index) => (
-                        <Joker key={index} joker={joker} />
-                    ))}
-                </div>
+                <CommunityArea
+                    phase={currentPhase}
+                    cards={communityCards}
+                    jokers={communityJokers}
+                />
             </div>
         </div>
     )
