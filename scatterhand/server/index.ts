@@ -10,6 +10,8 @@ import rateLimit from 'express-rate-limit'
 import getPort, { portNumbers } from 'get-port'
 import morgan from 'morgan'
 import { type ServerBuild } from 'react-router'
+import { createServer } from 'http'
+import { initializeSocketIO } from '../app/utils/socket.server'
 
 const MODE = process.env.NODE_ENV ?? 'development'
 const IS_PROD = MODE === 'production'
@@ -30,6 +32,10 @@ const viteDevServer = IS_PROD
 		)
 
 const app = express()
+const httpServer = createServer(app)
+
+// Initialize Socket.IO
+initializeSocketIO(httpServer)
 
 const getHost = (req: { get: (key: string) => string | undefined }) =>
 	req.get('X-Forwarded-Host') ?? req.get('host') ?? ''
@@ -218,7 +224,7 @@ if (!portAvailable && !IS_DEV) {
 	process.exit(1)
 }
 
-const server = app.listen(portToUse, () => {
+const server = httpServer.listen(portToUse, () => {
 	if (!portAvailable) {
 		console.warn(
 			styleText(

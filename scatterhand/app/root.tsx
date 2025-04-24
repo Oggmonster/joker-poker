@@ -63,8 +63,8 @@ export const links: Route.LinksFunction = () => {
 
 export const meta: Route.MetaFunction = ({ data }) => {
 	return [
-		{ title: data ? 'Epic Notes' : 'Error | Epic Notes' },
-		{ name: 'description', content: `Your own captain's log` },
+		{ title: data ? 'Scatterhand' : 'Error | Scatterhand' },
+		{ name: 'description', content: `A game of cards and chance` },
 	]
 }
 
@@ -237,11 +237,8 @@ function App() {
 function Logo() {
 	return (
 		<Link to="/" className="group grid leading-snug">
-			<span className="font-light transition group-hover:-translate-x-1">
-				epic
-			</span>
 			<span className="font-bold transition group-hover:translate-x-1">
-				notes
+				Scatterhand
 			</span>
 		</Link>
 	)

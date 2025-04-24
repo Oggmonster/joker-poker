@@ -16,7 +16,6 @@ import { authSessionStorage } from '#app/utils/session.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { NameSchema, UsernameSchema } from '#app/utils/user-validation.ts'
 import { type Route, type Info } from './+types/profile.index.ts'
-import { twoFAVerificationType } from './profile.two-factor.tsx'
 
 export const handle: SEOHandle = {
 	getSitemapEntries: () => null,
@@ -51,10 +50,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 		},
 	})
 
-	const twoFactorVerification = await prisma.verification.findUnique({
-		select: { id: true },
-		where: { target_type: { type: twoFAVerificationType, target: userId } },
-	})
 
 	const password = await prisma.password.findUnique({
 		select: { userId: true },
@@ -64,7 +59,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 	return {
 		user,
 		hasPassword: Boolean(password),
-		isTwoFactorEnabled: Boolean(twoFactorVerification),
 	}
 }
 
@@ -138,15 +132,6 @@ export default function EditUserProfile({ loaderData }: Route.ComponentProps) {
 					</Link>
 				</div>
 				<div>
-					<Link to="two-factor">
-						{loaderData.isTwoFactorEnabled ? (
-							<Icon name="lock-closed">2FA is enabled</Icon>
-						) : (
-							<Icon name="lock-open-1">Enable 2FA</Icon>
-						)}
-					</Link>
-				</div>
-				<div>
 					<Link to={loaderData.hasPassword ? 'password' : 'password/create'}>
 						<Icon name="dots-horizontal">
 							{loaderData.hasPassword ? 'Change Password' : 'Create a Password'}
@@ -159,14 +144,9 @@ export default function EditUserProfile({ loaderData }: Route.ComponentProps) {
 					</Link>
 				</div>
 				<div>
-					<Link to="passkeys">
-						<Icon name="passkey">Manage passkeys</Icon>
-					</Link>
-				</div>
-				<div>
 					<Link
 						reloadDocument
-						download="my-epic-notes-data.json"
+						download="my-data.json"
 						to="/resources/download-user-data"
 					>
 						<Icon name="download">Download your data</Icon>

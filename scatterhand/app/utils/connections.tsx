@@ -4,37 +4,25 @@ import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { useIsPending } from './misc.tsx'
 
-export const GITHUB_PROVIDER_NAME = 'github'
-// to add another provider, set their name here and add it to the providerNames below
+export const providerNames = [] as const
 
-export const providerNames = [GITHUB_PROVIDER_NAME] as const
-export const ProviderNameSchema = z.enum(providerNames)
-export type ProviderName = z.infer<typeof ProviderNameSchema>
-
-export const providerLabels: Record<ProviderName, string> = {
-	[GITHUB_PROVIDER_NAME]: 'GitHub',
-} as const
-
-export const providerIcons: Record<ProviderName, React.ReactNode> = {
-	[GITHUB_PROVIDER_NAME]: <Icon name="github-logo" />,
-} as const
+export type ProviderName = (typeof providerNames)[number]
 
 export function ProviderConnectionForm({
-	redirectTo,
 	type,
 	providerName,
+	redirectTo,
 }: {
-	redirectTo?: string | null
 	type: 'Connect' | 'Login' | 'Signup'
 	providerName: ProviderName
+	redirectTo?: string | null
 }) {
-	const label = providerLabels[providerName]
-	const formAction = `/auth/${providerName}`
-	const isPending = useIsPending({ formAction })
+	const isPending = useIsPending()
+
 	return (
 		<Form
 			className="flex items-center justify-center gap-2"
-			action={formAction}
+			action={`/auth/${providerName}`}
 			method="POST"
 		>
 			{redirectTo ? (
@@ -45,12 +33,9 @@ export function ProviderConnectionForm({
 				className="w-full"
 				status={isPending ? 'pending' : 'idle'}
 			>
-				<span className="inline-flex items-center gap-1.5">
-					{providerIcons[providerName]}
-					<span>
-						{type} with {label}
-					</span>
-				</span>
+				<Icon name={providerName}>
+					{type} with {providerName}
+				</Icon>
 			</StatusButton>
 		</Form>
 	)

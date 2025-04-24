@@ -70,36 +70,23 @@ export default function ProfileRoute() {
 						Joined {data.userJoinedDisplay}
 					</p>
 					{isLoggedInUser ? (
-						<Form action="/logout" method="POST" className="mt-3">
-							<Button type="submit" variant="link" size="pill">
-								<Icon name="exit" className="scale-125 max-md:scale-150">
-									Logout
-								</Icon>
-							</Button>
-						</Form>
-					) : null}
-					<div className="mt-10 flex gap-4">
-						{isLoggedInUser ? (
-							<>
-								<Button asChild>
-									<Link to="notes" prefetch="intent">
-										My notes
-									</Link>
+						<>
+							<Form action="/logout" method="POST" className="mt-3">
+								<Button type="submit" variant="link" size="pill">
+									<Icon name="exit" className="scale-125 max-md:scale-150">
+										Logout
+									</Icon>
 								</Button>
+							</Form>
+							<div className="mt-10">
 								<Button asChild>
 									<Link to="/settings/profile" prefetch="intent">
 										Edit profile
 									</Link>
 								</Button>
-							</>
-						) : (
-							<Button asChild>
-								<Link to="notes" prefetch="intent">
-									{userDisplayName}'s notes
-								</Link>
-							</Button>
-						)}
-					</div>
+							</div>
+						</>
+					) : null}
 				</div>
 			</div>
 		</div>
