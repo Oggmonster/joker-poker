@@ -6,7 +6,6 @@ import { Joker } from './joker'
 export enum PlayerStatus {
     WAITING = 'WAITING',     // Waiting for next round
     PLAYING = 'PLAYING',     // Currently playing a round
-    FOLDED = 'FOLDED',        // Folded current hand
     ELIMINATED = 'ELIMINATED' // Out of the tournament (failed to beat boss blind)
 }
 
@@ -14,7 +13,7 @@ export enum PlayerStatus {
  * Represents a player in the game
  */
 export class Player {
-    private hand: Card[] = []
+    private _hand: Card[] = []
     private _status: PlayerStatus
     private _position: number
     private _jokers: Joker[] = []
@@ -28,7 +27,7 @@ export class Player {
         private readonly _id: string,
         private readonly _name: string,
         position: number = -1,
-        isBot: boolean = false
+        isBot: boolean = false,
     ) {
         this._status = PlayerStatus.WAITING
         this._position = position
@@ -38,14 +37,14 @@ export class Player {
     /**
      * Get the player's ID
      */
-    getId(): string {
+    get id(): string {
         return this._id
     }
 
     /**
      * Get the player's name
      */
-    getName(): string {
+    get name(): string {
         return this._name
     }
 
@@ -66,7 +65,7 @@ export class Player {
     /**
      * Get the player's position at the table
      */
-    getPosition(): number {
+    get position(): number {
         return this._position
     }
 
@@ -135,21 +134,21 @@ export class Player {
      * Get the player's current hand
      */
     getCards(): readonly Card[] {
-        return this.hand
+        return this._hand
     }
 
     /**
      * Add a card to the player's hand
      */
-    receiveCard(card: Card): void {
-        this.hand.push(card)
+    addToHand(card: Card): void {
+        this._hand.push(card)
     }
 
     /**
      * Clear the player's hand
      */
     clearHand(): void {
-        this.hand = []
+        this._hand = []
         this.clearActiveJokers()
         this._roundScore = 0
     }
@@ -157,7 +156,7 @@ export class Player {
     /**
      * Get the player's score for the current round
      */
-    getRoundScore(): number {
+    get roundScore(): number {
         return this._roundScore
     }
 
@@ -169,12 +168,51 @@ export class Player {
     }
 
     /**
-     * Fold the player's hand
+     * Remove a card from the player's hand at the specified index
      */
-    fold(): void {
-        if (this._status === PlayerStatus.PLAYING) {
-            this._status = PlayerStatus.FOLDED
+    removeFromHand(index: number): Card {
+        if (index < 0 || index >= this._hand.length) {
+            throw new Error('Invalid card index')
         }
+        const removed = this._hand.splice(index, 1)[0]
+        if (!removed) {
+            throw new Error('Failed to remove card')
+        }
+        return removed
+    }
+
+    /**
+     * Set the player's selected cards for scoring
+     */
+    setSelectedCards(cards: Card[]): void {
+        if (cards.length !== 5) {
+            throw new Error('Must select exactly 5 cards')
+        }
+        this._selectedCards = [...cards]
+    }
+
+    /**
+     * Set the player's selected jokers for the current hand
+     */
+    setSelectedJokers(jokers: Joker[]): void {
+        if (jokers.length > 3) {
+            throw new Error('Cannot select more than 3 jokers')
+        }
+        this._selectedJokers = [...jokers]
+    }
+
+    /**
+     * Get the player's selected cards
+     */
+    getSelectedCards(): readonly Card[] {
+        return this._selectedCards
+    }
+
+    /**
+     * Get the player's selected jokers
+     */
+    getSelectedJokers(): readonly Joker[] {
+        return this._selectedJokers
     }
 
     /**
@@ -206,91 +244,12 @@ export class Player {
     }
 
     /**
-     * Eliminate player from the tournament (failed to beat boss blind)
-     */
-    eliminate(): void {
-        this._status = PlayerStatus.ELIMINATED
-        this.clearHand()
-    }
-
-    /**
-     * Remove a card from the player's hand at the specified index
-     */
-    removeCard(index: number): Card {
-        if (index < 0 || index >= this.hand.length) {
-            throw new Error('Invalid card index')
-        }
-        const removed = this.hand.splice(index, 1)[0]
-        if (!removed) {
-            throw new Error('Failed to remove card')
-        }
-        return removed
-    }
-
-    /**
-     * Set the player's selected cards for scoring
-     */
-    setSelectedCards(cards: Card[]): void {
-        if (cards.length !== 5) {
-            throw new Error('Must select exactly 5 cards')
-        }
-        this._selectedCards = [...cards]
-    }
-
-    /**
-     * Set the player's selected jokers for scoring
-     */
-    setSelectedJokers(jokers: Joker[]): void {
-        if (jokers.length > 3) {
-            throw new Error('Cannot select more than 3 jokers')
-        }
-        this._selectedJokers = [...jokers]
-    }
-
-    /**
-     * Get the player's selected cards
-     */
-    getSelectedCards(): readonly Card[] {
-        return this._selectedCards
-    }
-
-    /**
-     * Get the player's selected jokers
-     */
-    getSelectedJokers(): readonly Joker[] {
-        return this._selectedJokers
-    }
-
-    // Getters
-    get id(): string {
-        return this._id
-    }
-
-    get name(): string {
-        return this._name
-    }
-
-    get position(): number {
-        return this._position
-    }
-
-    get roundScore(): number {
-        return this._roundScore
-    }
-
-    /**
-     * Check if the player can still act in the current round
+     * Check if the player can act in the current round
      */
     canAct(): boolean {
         return this._status === PlayerStatus.PLAYING
     }
 
-    /**
-     * Check if the player is still in the current hand
-     */
-    isInHand(): boolean {
-        return this._status === PlayerStatus.PLAYING
-    }
 
     /**
      * Check if the player is still in the tournament
@@ -300,9 +259,40 @@ export class Player {
     }
 
     /**
-     * Return string representation of the player
+     * Eliminate player from the tournament (failed to beat boss blind)
+     */
+    eliminate(): void {
+        this._status = PlayerStatus.ELIMINATED
+        this.clearHand()
+    }
+
+    /**
+     * Get string representation of the player
      */
     toString(): string {
         return `${this._name} (${this._jokers.length} jokers)`
     }
+
+    /**
+     * Deactivate a joker for the current hand
+     */
+    deactivateJoker(jokerId: string): boolean {
+        const index = this._activeJokers.findIndex(j => j.id === jokerId)
+        if (index === -1) return false
+        this._activeJokers.splice(index, 1)
+        return true
+    }
+
+    
+    /**
+     * Remove a specific card from the player's hand
+     */
+    removeCard(card: Card): void {
+        const index = this._hand.findIndex(c => c.equals(card))
+        if (index === -1) {
+            throw new Error('Card not in hand')
+        }
+        this._hand.splice(index, 1)
+    }
+   
 } 

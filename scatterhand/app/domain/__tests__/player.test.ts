@@ -29,36 +29,36 @@ describe('Player', () => {
 
     describe('constructor', () => {
         test('initializes with correct values', () => {
-            expect(player.getId()).toBe('1')
-            expect(player.getName()).toBe('Test Player')
+            expect(player.id).toBe('1')
+            expect(player.name).toBe('Test Player')
             expect(player.getStatus()).toBe(PlayerStatus.WAITING)
-            expect(player.getPosition()).toBe(-1)
-            expect(player.getRoundScore()).toBe(0)
+            expect(player.position).toBe(-1)
+            expect(player.roundScore).toBe(0)
             expect(player.isBot()).toBe(false)
         })
 
         test('initializes bot player correctly', () => {
             const botPlayer = new Player('bot1', 'Bot Player', 1, true)
             expect(botPlayer.isBot()).toBe(true)
-            expect(botPlayer.getPosition()).toBe(1)
+            expect(botPlayer.position).toBe(1)
         })
     })
 
     describe('hand management', () => {
         test('receives cards correctly', () => {
             const card = new Card(Suit.SPADES, Rank.ACE)
-            player.receiveCard(card)
+            player.addToHand(card)
             expect(player.getCards()).toEqual([card])
         })
 
         test('clears hand and resets active jokers', () => {
-            player.receiveCard(new Card(Suit.SPADES, Rank.ACE))
+            player.addToHand(new Card(Suit.SPADES, Rank.ACE))
             player.addJoker(mockJoker1)
             player.activateJoker(mockJoker1.id)
             player.clearHand()
             expect(player.getCards()).toEqual([])
             expect(player.getActiveJokers()).toEqual([])
-            expect(player.getRoundScore()).toBe(0)
+            expect(player.roundScore).toBe(0)
         })
     })
 
@@ -112,7 +112,7 @@ describe('Player', () => {
             player.resetForNewRound()
             expect(player.getStatus()).toBe(PlayerStatus.PLAYING)
             expect(player.getActiveJokers()).toEqual([])
-            expect(player.getRoundScore()).toBe(0)
+            expect(player.roundScore).toBe(0)
         })
 
         test('maintains eliminated status after round reset', () => {
@@ -123,7 +123,7 @@ describe('Player', () => {
 
         test('sets and gets round score', () => {
             player.setRoundScore(150)
-            expect(player.getRoundScore()).toBe(150)
+            expect(player.roundScore).toBe(150)
         })
     })
 
@@ -169,17 +169,8 @@ describe('Player', () => {
         test('canAct returns correct value', () => {
             player.resetForNewRound() // Set to PLAYING
             expect(player.canAct()).toBe(true)
-            player.fold()
-            expect(player.canAct()).toBe(false)
             player.eliminate()
             expect(player.canAct()).toBe(false)
-        })
-
-        test('isInHand returns correct value', () => {
-            player.resetForNewRound() // Set to PLAYING
-            expect(player.isInHand()).toBe(true)
-            player.fold()
-            expect(player.isInHand()).toBe(false)
         })
     })
 

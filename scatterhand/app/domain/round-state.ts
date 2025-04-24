@@ -2,13 +2,12 @@ import { Card } from './cards'
 import { Joker } from './joker'
 import { Player } from './player'
 
+/**
+ * Represents the different phases of a round
+ */
 export enum RoundPhase {
-    PRE_FLOP = 'PRE_FLOP',
-    FLOP = 'FLOP',
-    TURN = 'TURN',
-    RIVER = 'RIVER',
-    SCORING = 'SCORING',
-    COMPLETE = 'COMPLETE'
+    DISCARD = 'DISCARD',
+    SCORING = 'SCORING'
 }
 
 export class CommunityCards {
@@ -58,7 +57,7 @@ export class RoundState {
         deck: Card[],
         jokerPool: Joker[]
     ) {
-        this.phase = RoundPhase.PRE_FLOP
+        this.phase = RoundPhase.DISCARD
         this.community = new CommunityCards()
         this.deck = [...deck]
         this.jokerPool = [...jokerPool]
@@ -74,7 +73,7 @@ export class RoundState {
      * Start the pre-flop phase
      */
     startPreFlop(): void {
-        if (this.phase !== RoundPhase.PRE_FLOP) {
+        if (this.phase !== RoundPhase.DISCARD) {
             throw new Error('Invalid phase transition')
         }
 
@@ -83,7 +82,7 @@ export class RoundState {
             // Deal cards
             for (let i = 0; i < 2; i++) {
                 const card = this.drawCard()
-                player.receiveCard(card)
+                player.addToHand(card)
             }
 
             // Deal joker
@@ -98,7 +97,7 @@ export class RoundState {
      * Start the flop phase
      */
     startFlop(): void {
-        if (this.phase !== RoundPhase.PRE_FLOP) {
+        if (this.phase !== RoundPhase.DISCARD) {
             throw new Error('Invalid phase transition')
         }
 
@@ -123,14 +122,14 @@ export class RoundState {
             }
         }
 
-        this.phase = RoundPhase.FLOP
+        this.phase = RoundPhase.SCORING
     }
 
     /**
      * Start the turn phase
      */
     startTurn(): void {
-        if (this.phase !== RoundPhase.FLOP) {
+        if (this.phase !== RoundPhase.SCORING) {
             throw new Error('Invalid phase transition')
         }
 
@@ -153,14 +152,14 @@ export class RoundState {
             }
         }
 
-        this.phase = RoundPhase.TURN
+        this.phase = RoundPhase.SCORING
     }
 
     /**
      * Start the river phase
      */
     startRiver(): void {
-        if (this.phase !== RoundPhase.TURN) {
+        if (this.phase !== RoundPhase.SCORING) {
             throw new Error('Invalid phase transition')
         }
 
@@ -173,14 +172,14 @@ export class RoundState {
             this.community.addJoker(joker)
         }
 
-        this.phase = RoundPhase.RIVER
+        this.phase = RoundPhase.SCORING
     }
 
     /**
      * Start the scoring phase
      */
     startScoring(): void {
-        if (this.phase !== RoundPhase.RIVER) {
+        if (this.phase !== RoundPhase.SCORING) {
             throw new Error('Invalid phase transition')
         }
         this.phase = RoundPhase.SCORING
@@ -195,7 +194,7 @@ export class RoundState {
 
         switch (action.type) {
             case 'DISCARD_CARD': {
-                if (!action.cardIndices || this.phase !== RoundPhase.PRE_FLOP) {
+                if (!action.cardIndices || this.phase !== RoundPhase.DISCARD) {
                     return false
                 }
                 
@@ -211,15 +210,15 @@ export class RoundState {
                 // Remove cards from player's hand
                 for (const index of sortedIndices) {
                     const discardedCard = playerCards[index]
-                    player.removeCard(index)
+                    player.removeFromHand(index)
                     // Deal a new card to replace the discarded one
                     const newCard = this.drawCard()
-                    player.receiveCard(newCard)
+                    player.addToHand(newCard)
                 }
                 break
             }
             case 'DISCARD_JOKER': {
-                if (!action.jokerIds || this.phase !== RoundPhase.PRE_FLOP) {
+                if (!action.jokerIds || this.phase !== RoundPhase.DISCARD) {
                     return false
                 }
 

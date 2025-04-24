@@ -6,15 +6,14 @@ import { cn } from '#app/utils/cn'
 import { CommunityArea } from './community-area'
 import { PlayerArea } from './player-area'
 
-interface GameBoardProps {
+export interface GameBoardProps {
     players: Player[]
-    activePlayerId: string | null
+    activePlayerId: string
     playerCards: Record<string, Card[]>
     communityCards: Card[]
     communityJokers: BaseJoker[]
     currentPhase: RoundPhase
     playerScores: Record<string, number>
-    className?: string
 }
 
 interface PlayerPosition {
@@ -62,48 +61,75 @@ export function GameBoard({
     communityCards,
     communityJokers,
     currentPhase,
-    playerScores,
-    className
+    playerScores
 }: GameBoardProps) {
     const positions = calculatePlayerPositions(players.length)
 
     return (
-        <div className={cn('relative w-full h-full', className)}>
-            {/* Players */}
-            {players.map((player, index) => {
-                const position = positions[index]
-                if (!position) return null // Skip if no position calculated
-                const isActive = player.getId() === activePlayerId
-                const playerId = player.getId()
-
-                return (
-                    <div
-                        key={playerId}
-                        className="absolute transform -translate-x-1/2 -translate-y-1/2"
-                        style={{
-                            left: `${position.x}%`,
-                            top: `${position.y}%`,
-                            transform: `translate(-50%, -50%) rotate(${position.rotation}deg)`
-                        }}
-                    >
-                        <PlayerArea
-                            player={player}
-                            isActive={isActive}
-                            cards={playerCards[playerId] || []}
-                            roundScore={playerScores[playerId] || 0}
-                        />
-                    </div>
-                )
-            })}
-
+        <div className="relative w-full h-full bg-green-800 rounded-lg p-8">
             {/* Community Area */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <CommunityArea
-                    phase={currentPhase}
-                    cards={communityCards}
-                    jokers={communityJokers}
-                />
+                <div className="flex flex-col items-center gap-4">
+                    <div className="text-white font-bold">
+                        {currentPhase === RoundPhase.DISCARD ? 'Discard Phase' : 'Scoring Phase'}
+                    </div>
+                    
+                    {/* Community Cards */}
+                    <div className="flex gap-2">
+                        {communityCards.map((card, index) => (
+                            <div key={index} className="w-16 h-24 bg-white rounded">
+                                {/* TODO: Render card */}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Community Jokers */}
+                    <div className="flex gap-2">
+                        {communityJokers.map((joker, index) => (
+                            <div key={index} className="w-16 h-24 bg-purple-500 rounded">
+                                {/* TODO: Render joker */}
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
+
+            {/* Players */}
+            {players.map((player, index) => (
+                <div
+                    key={player.id}
+                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 ${getPlayerPosition(index, players.length)}`}
+                >
+                    <div className={`flex flex-col items-center gap-2 ${player.id === activePlayerId ? 'ring-2 ring-yellow-400 rounded-lg p-2' : ''}`}>
+                        <div className="text-white font-bold">{player.name}</div>
+                        
+                        {/* Player's Cards */}
+                        <div className="flex gap-1">
+                            {playerCards[player.id]?.map((card, cardIndex) => (
+                                <div key={cardIndex} className="w-12 h-16 bg-white rounded">
+                                    {/* TODO: Render card */}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Player's Score */}
+                        {currentPhase === RoundPhase.SCORING && (
+                            <div className="text-yellow-400 font-bold">
+                                Score: {playerScores[player.id] || 0}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ))}
         </div>
     )
+}
+
+function getPlayerPosition(index: number, totalPlayers: number): string {
+    const angle = (index * 360) / totalPlayers - 90 // Start from top
+    const radius = 40 // % of container size
+    const x = radius * Math.cos((angle * Math.PI) / 180)
+    const y = radius * Math.sin((angle * Math.PI) / 180)
+    
+    return `left-[${50 + x}%] top-[${50 + y}%]`
 } 
