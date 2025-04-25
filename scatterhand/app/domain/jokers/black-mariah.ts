@@ -1,5 +1,6 @@
-import { BaseJoker, GamePhase, JokerRarity, JokerType } from '../joker';
+import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Rank, Suit } from '../cards';
+import { Phase } from '../round-state';
 
 /**
  * A joker that gives bonus points when Queen of Spades appears
@@ -21,13 +22,12 @@ export class BlackMariah extends BaseJoker {
     public calculateBonus({ holeCards, playedHand }: {
         holeCards: readonly Card[];
         playedHand?: readonly Card[];
-        phase: GamePhase;
+        phase?: Phase;
     }): number {
-        // Consider all available cards
-        const allCards = playedHand ? [...holeCards, ...playedHand] : holeCards;
+        if (!playedHand) return 0
         
         // Check for Queen of Spades
-        const hasQueenSpades = allCards.some(card => 
+        const hasQueenSpades = playedHand.some(card => 
             card.rank === Rank.QUEEN && card.suit === Suit.SPADES
         );
         

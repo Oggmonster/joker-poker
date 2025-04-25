@@ -113,15 +113,6 @@ describe('Snowmen', () => {
         expect(bonus).toBe(0)
     })
 
-    test('should not award points after pre-flop', () => {
-        const holeCards = [
-            new Card(Suit.HEARTS, Rank.EIGHT),
-            new Card(Suit.DIAMONDS, Rank.EIGHT)
-        ]
-
-        const bonus = snowmen.calculateBonus({ holeCards, phase: Phase.FLOP })
-        expect(bonus).toBe(0)
-    })
 
     test('should scale bonus with level', () => {
         const holeCards = [

@@ -1,12 +1,13 @@
-import { BaseJoker, GamePhase, JokerRarity, JokerType } from '../joker'
+import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card, Suit } from '../cards'
+import { Phase } from '../round-state';
 
 /**
  * A joker that gives bonus points for alternating card colors
  */
 export class ColorWeaver extends BaseJoker {
-    private static readonly BASE_BONUS = 100
-    private static readonly LEVEL_BONUS = 100
+    private static readonly BASE_BONUS = 10
+    private static readonly LEVEL_BONUS = 5
 
     constructor() {
         super(
@@ -44,12 +45,11 @@ export class ColorWeaver extends BaseJoker {
     public calculateBonus({ holeCards, playedHand }: {
         holeCards: readonly Card[]
         playedHand?: readonly Card[]
-        phase: GamePhase
+        phase: Phase
     }): number {
-        // Consider all available cards
-        const allCards = playedHand ? [...holeCards, ...playedHand] : holeCards
+        if (!playedHand) return 0
         
-        const alternatingPairs = this.countAlternatingColors(allCards)
+        const alternatingPairs = this.countAlternatingColors([...playedHand])
         if (alternatingPairs === 0) return 0
 
         const bonus = ColorWeaver.BASE_BONUS + 

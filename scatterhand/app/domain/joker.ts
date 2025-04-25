@@ -96,6 +96,6 @@ export abstract class BaseJoker implements Joker {
     abstract calculateBonus(params: {
         holeCards: readonly Card[];
         playedHand?: readonly Card[];
-        phase: Phase;
+        phase?: Phase;
     }): number
 } 

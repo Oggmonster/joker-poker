@@ -1,4 +1,5 @@
-import { BaseJoker, GamePhase, JokerRarity, JokerType } from '../joker';
+import { BaseJoker, JokerRarity, JokerType } from '../joker';
+import { Phase } from '../round-state';
 import { Card, Rank } from '../cards';
 
 /**
@@ -18,10 +19,10 @@ export class BigSlick extends BaseJoker {
         );
     }
 
-    public calculateBonus({ holeCards, phase }: {
+    public calculateBonus({ holeCards }: {
         holeCards: readonly Card[];
         playedHand?: readonly Card[];
-        phase: GamePhase;
+        phase?: Phase;
     }): number {
         // Only check hole cards
         if (holeCards.length !== 2) return 0;

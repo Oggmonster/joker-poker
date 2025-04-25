@@ -1,5 +1,6 @@
-import { BaseJoker, GamePhase, JokerRarity, JokerType } from '../joker';
+import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Rank } from '../cards';
+import { Phase } from '../round-state';
 
 /**
  * A joker that gives bonus points for pocket sevens (7-7)
@@ -18,10 +19,10 @@ export class WalkingSticks extends BaseJoker {
         );
     }
 
-    public calculateBonus({ holeCards, phase }: {
+    public calculateBonus({ holeCards }: {
         holeCards: readonly Card[];
         playedHand?: readonly Card[];
-        phase: GamePhase;
+        phase: Phase;
     }): number {
         // Only check hole cards for pocket pairs
         if (holeCards.length !== 2) return 0;

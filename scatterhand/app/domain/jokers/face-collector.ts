@@ -1,12 +1,14 @@
-import { BaseJoker, GamePhase, JokerRarity, JokerType } from '../joker'
+import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card, Rank } from '../cards'
+import { Phase } from '../round-state'
+
 
 /**
  * A joker that gives bonus points for face cards (J, Q, K)
  */
 export class FaceCollector extends BaseJoker {
-    private static readonly BASE_BONUS = 200
-    private static readonly LEVEL_BONUS = 200
+    private static readonly BASE_BONUS = 20
+    private static readonly LEVEL_BONUS = 20
     private static readonly FACE_CARDS = [Rank.JACK, Rank.QUEEN, Rank.KING]
 
     constructor() {
@@ -26,12 +28,11 @@ export class FaceCollector extends BaseJoker {
     public calculateBonus({ holeCards, playedHand }: {
         holeCards: readonly Card[]
         playedHand?: readonly Card[]
-        phase: GamePhase
+        phase?: Phase
     }): number {
-        // Consider all available cards
-        const allCards = playedHand ? [...holeCards, ...playedHand] : holeCards
+        if (!playedHand) return 0
         
-        const faceCount = this.countFaceCards(allCards)
+        const faceCount = this.countFaceCards([...playedHand])
         if (faceCount === 0) return 0
 
         const bonus = FaceCollector.BASE_BONUS + 

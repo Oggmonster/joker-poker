@@ -1,5 +1,6 @@
-import { BaseJoker, GamePhase, JokerRarity, JokerType } from '../joker';
+import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Rank, RANKS_ORDER } from '../cards';
+import { Phase } from '../round-state';
 
 /**
  * A joker that gives bonus points for completing a Broadway straight (10-J-Q-K-A)
@@ -43,16 +44,14 @@ export class Broadway extends BaseJoker {
     public calculateBonus({ holeCards, playedHand }: {
         holeCards: readonly Card[];
         playedHand?: readonly Card[];
-        phase: GamePhase;
+        phase: Phase;
     }): number {
         // Need both hole cards and played hand to check for Broadway
         if (!playedHand) return 0;
 
-        // Consider all available cards
-        const allCards = [...holeCards, ...playedHand];
         
         // Check for Broadway straight
-        if (!this.hasBroadwayStraight(allCards)) return 0;
+        if (!this.hasBroadwayStraight([...playedHand])) return 0;
 
         const bonus = Broadway.BASE_BONUS + 
             (Broadway.LEVEL_BONUS * (this.level - 1));

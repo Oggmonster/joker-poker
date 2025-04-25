@@ -1,5 +1,6 @@
-import { BaseJoker, GamePhase, JokerRarity } from '../joker';
+import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Suit } from '../cards';
+import { Phase } from '../round-state';
 
 export class DiamondDazzle extends BaseJoker {
     private static readonly POINTS_PER_DIAMOND = 2;
@@ -9,14 +10,15 @@ export class DiamondDazzle extends BaseJoker {
             'diamond-dazzle',
             'Diamond Dazzle',
             `+${DiamondDazzle.POINTS_PER_DIAMOND} points for each Diamond card in your hand`,
-            JokerRarity.COMMON
+            JokerRarity.COMMON,
+            JokerType.PLAYER
         );
     }
 
     public calculateBonus({ holeCards, playedHand }: {
         holeCards: readonly Card[];
         playedHand?: readonly Card[];
-        phase: GamePhase;
+        phase: Phase;
     }): number {
         // Count diamonds in hole cards
         const diamondsInHole = holeCards.filter(card => card.suit === Suit.DIAMONDS).length;
