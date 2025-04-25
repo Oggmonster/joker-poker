@@ -220,11 +220,7 @@
       {
         "name": "Double Trouble",
         "effect": "Gain +10 points if you make two pairs using both hole cards."
-      },
-      {
-        "name": "Overpair",
-        "effect": "If your pocket pair is higher than any board card, gain +22 points."
-      }
+      }      
     ],
     "legendary": [
       {
