@@ -23,6 +23,22 @@ export const Rank = {
     ACE: 'ace',
 } as const
 
+export const RANK_VALUES = {
+    [Rank.TWO]: 2,
+    [Rank.THREE]: 3,
+    [Rank.FOUR]: 4,
+    [Rank.FIVE]: 5,
+    [Rank.SIX]: 6,
+    [Rank.SEVEN]: 7,
+    [Rank.EIGHT]: 8,
+    [Rank.NINE]: 9,
+    [Rank.TEN]: 10,
+    [Rank.JACK]: 11,
+    [Rank.QUEEN]: 12,
+    [Rank.KING]: 13,
+    [Rank.ACE]: 14,
+}
+
 export type Rank = typeof Rank[keyof typeof Rank]
 
 // Array of ranks in order from lowest to highest
@@ -77,6 +93,10 @@ export class Card {
 
     toString(): string {
         return `${getRankDisplay(this.rank)} of ${getSuitDisplay(this.suit)}`
+    }
+
+    toNumber(): number {
+        return RANK_VALUES[this.rank]
     }
 
     // Utility method to compare cards by rank
