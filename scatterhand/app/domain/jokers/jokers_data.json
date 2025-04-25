@@ -19,7 +19,7 @@
       },
       {
         "name": "The Hammer",
-        "effect": "If holding 7-2 offsuit, gain +8 points if you win the hand."
+        "effect": "If holding 7-2 offsuit, gain +8 points"
       },
       {
         "name": "The Wheel",
@@ -39,7 +39,87 @@
       },
       {
         "name": "The Doyle",
-        "effect": "If holding 10-2, gain +5 points if you win the hand."
+        "effect": "If holding 10-2, gain +5 points"
+      },
+      {
+        "name": "Dirty Diana",
+        "effect": "If holding Q-9, gain +4 points."
+      },
+      {
+        "name": "Walking Sticks",
+        "effect": "If holding pocket 7s (77), gain +4 points."
+      },
+      {
+        "name": "Snowmen Cannibals",
+        "effect": "If holding 88 vs 88, gain +6 points."
+      },
+      {
+        "name": "Six Shooter",
+        "effect": "If holding pocket 6s (66), gain +4 points."
+      },
+      {
+        "name": "Big Slick Offsuit",
+        "effect": "If holding A-K offsuit, gain +3 points."
+      },
+      {
+        "name": "Broadway",
+        "effect": "If holding cards that complete a Broadway straight, gain +5 points."
+      },
+      {
+        "name": "Black Mariah",
+        "effect": "If Q♠ appears in your hand or on the board, gain +3 points."
+      },
+      {
+        "name": "The Mutt",
+        "effect": "If holding 9-3, gain +4 points if you win the hand."
+      },
+      {
+        "name": "Stone Cold",
+        "effect": "If holding 7-4, gain +3 points."
+      },
+      {
+        "name": "Treys",
+        "effect": "If holding pocket 3s (33), gain +3 points."
+      },
+      {
+        "name": "Eagles",
+        "effect": "If holding Ace-3, gain +3 points."
+      },
+      {
+        "name": "Jack Daniels",
+        "effect": "If holding Jack and Ten (JT), gain +4 points."
+      },
+      {
+        "name": "Texas Dolly",
+        "effect": "If holding T-2 suited, gain +4 points."
+      },
+      {
+        "name": "Oil Slick",
+        "effect": "If holding suited K-9, gain +3 points."
+      },
+      {
+        "name": "Antifreeze",
+        "effect": "If holding 9-5, gain +3 points."
+      },
+      {
+        "name": "Lollipops",
+        "effect": "If holding pocket 9s (99), gain +4 points."
+      },
+      {
+        "name": "Big Dog",
+        "effect": "Gain +4 points if you have a lower pair (below pair of 10s" 
+      },
+      {
+        "name": "The Mule",
+        "effect": "If holding 6-3, gain +3 points."
+      },
+      {
+        "name": "Bookends",
+        "effect": "If your hole cards are Ace and 2, gain +4 points."
+      },
+      {
+        "name": "Santa's Beard",
+        "effect": "If holding 6-6, gain +3 points."
       }
     ],
     "uncommon": [
@@ -48,20 +128,12 @@
         "effect": "If all your cards are face cards (JQK), gain +10 points."
       },
       {
-        "name": "Bookends",
-        "effect": "If your hole cards are Ace and 2, gain +6 points."
-      },
-      {
         "name": "Slickback",
         "effect": "If your hole cards are King and Queen suited, gain +7 points."
       },
       {
         "name": "The Brunson",
         "effect": "If holding 10-2 and make two pair, gain +10 points."
-      },
-      {
-        "name": "The Grinder",
-        "effect": "Gain +2 points every round you make it to showdown."
       },
       {
         "name": "Big Chick",
@@ -77,11 +149,39 @@
       },
       {
         "name": "Quack Quack",
-        "effect": "Gain +2 points every time a 2 appears on the board."
+        "effect": "Gain +2 points for each 2 in the hand you play"
       },
       {
         "name": "One-Eyed Jack",
         "effect": "If holding J\u2660 or J\u2665 (the one-eyed jacks), gain +5 points."
+      },
+      {
+        "name": "One Gap Glory",
+        "effect": "If holding a one-gap suited connector (e.g., 9-7 suited), gain +5 points."
+      },
+      {
+        "name": "Kojak",
+        "effect": "If holding K-J, gain +6 points."
+      },
+      {
+        "name": "TNT",
+        "effect": "If holding T-T, gain +7 points."
+      },
+      {
+        "name": "Computer Hand",
+        "effect": "If holding Q-7, gain +6 points."
+      },
+      {
+        "name": "Little Slick",
+        "effect": "If holding Ace and small card (A-2 to A-5), gain +6 points."
+      },
+      {
+        "name": "El Camino",
+        "effect": "If holding 7-5, gain +5 points."
+      },
+      {
+        "name": "Connect Four",
+        "effect": "If your hole cards are consecutive (e.g., 6-5), gain +6 points."
       }
     ],
     "rare": [
@@ -106,61 +206,65 @@
         "effect": "If you complete a flush with at least one hole card, gain +12 points."
       },
       {
-        "name": "Lucky Runout",
-        "effect": "If you improve on the river, gain +10 bonus points."
-      },
-      {
         "name": "Pocket Monster",
         "effect": "Any pocket pair gains +6 additional points."
       },
       {
-        "name": "Deep Stack",
-        "effect": "Gain +3 points for each previous round you've survived."
+        "name": "Set Mine",
+        "effect": "Gain +12 points if you hit Three of a Kind with a pocket pair."
       },
       {
-        "name": "Hot Streak",
-        "effect": "If you won the last hand, gain +10 extra points."
+        "name": "Steel Wheel",
+        "effect": "If you hit a straight flush A-2-3-4-5, gain +75 points."
       },
       {
-        "name": "Comeback Kid",
-        "effect": "If you lost the last hand, gain +10 extra points."
+        "name": "Double Trouble",
+        "effect": "Gain +10 points if you make two pairs using both hole cards."
+      },
+      {
+        "name": "Overpair",
+        "effect": "If your pocket pair is higher than any board card, gain +22 points."
       }
     ],
     "legendary": [
       {
         "name": "Ace in the Hole",
-        "effect": "Once per game, turn any one hole card into an Ace of any suit before showdown."
-      },
-      {
-        "name": "The Chameleon",
-        "effect": "Once per hand, treat one of your hole cards as a wildcard matching any rank needed for your best hand."
-      },
-      {
-        "name": "Time Traveler",
-        "effect": "Once per game, view all community cards one turn early and undo your last fold."
-      },
-      {
-        "name": "All-In Instinct",
-        "effect": "Automatically win ties when going all-in with a made hand."
+        "effect": "If you have a pocket Ace, gain +50 points."
       },
       {
         "name": "Royal Favor",
-        "effect": "Gain +30 bonus points if your final hand is a Royal Flush."
+        "effect": "Gain +150 points if your hand is a Royal Flush."
+      },
+      {
+        "name": "Poker Face",
+        "effect": "+10 points for each face card in your hand"
+      },
+      {
+        "name": "River God",
+        "effect": "Gain +50 points if it's the river phase"
+      },
+      {
+        "name": "Turn it up",
+        "effect": "Gain +50 points if it's the turn phase"
+      },
+      {
+        "name": "Flipity Flop",
+        "effect": "Gain +50 points if it's the flop phase"
       }
     ],
     "unique": [
       {
         "name": "The Dealer",
-        "effect": "You may choose the turn or river card once per game from a set of 3 options."
+        "effect": "If you hold two cards below 10, gain +100 points"
       },
       {
-        "name": "Ghost Hand",
-        "effect": "Once per round, play with a hidden third hole card. Only you can see and use it."
+        "name": "The Ripper",
+        "effect": "Every jack in your playing hand gives +50 points"
       },
       {
-        "name": "Fatebinder",
-        "effect": "Lock your hand from changes once per round to prevent bad draws or burn cards."
-      }
+        "name": "How Lucky",
+        "effect": "Every 7 in your playing hand gives +77 points"
+      }      
     ]
   },
   "community_jokers": {
@@ -261,7 +365,7 @@
     "uncommon": [
       {
         "name": "Dual Threat",
-        "effect": "If the board allows two possible straights, all straights gain +8 points."
+        "effect": "If the board has two pairs, all hands gain +8 points."
       },
       {
         "name": "Flush Lane",
@@ -300,10 +404,6 @@
         "effect": "If the board includes both an Ace and a 2, all hands gain +6 points."
       },
       {
-        "name": "Sharp Turn",
-        "effect": "If the turn card creates a possible straight, all players gain +5 points."
-      },
-      {
         "name": "Flood Warning",
         "effect": "If 4 or more suited cards on board, all players gain +8 points."
       },
@@ -330,14 +430,6 @@
       {
         "name": "Frozen Flop",
         "effect": "If the flop is rainbow, +3 to all hands using all 3 cards."
-      },
-      {
-        "name": "Kicker Clash",
-        "effect": "If a hand is won by kicker, that player gains +8 points."
-      },
-      {
-        "name": "Suit Storm",
-        "effect": "All cards of most common suit on board give +2 extra points."
       }
     ]
   }

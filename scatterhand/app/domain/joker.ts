@@ -1,3 +1,14 @@
+import { Card } from './cards';
+import { Phase } from './round-state';
+
+/**
+ * Type of joker based on who can use it
+ */
+export enum JokerType {
+    PLAYER = 'PLAYER',     // Joker that belongs to and only affects a specific player
+    COMMUNITY = 'COMMUNITY' // Joker that affects all players in the game
+}
+
 /**
  * Represents a joker card in the game
  */
@@ -16,6 +27,20 @@ export interface Joker {
      * Description of the joker's effect
      */
     readonly effect: string
+
+    /**
+     * Type of the joker (player or community)
+     */
+    readonly type: JokerType
+
+    /**
+     * Calculate bonus points based on the current game state
+     */
+    calculateBonus(params: {
+        holeCards: readonly Card[];
+        playedHand?: readonly Card[];
+        phase: Phase;
+    }): number
 }
 
 /**
@@ -38,6 +63,7 @@ export abstract class BaseJoker implements Joker {
         public readonly name: string,
         public readonly effect: string,
         public readonly rarity: JokerRarity,
+        public readonly type: JokerType,
         private _level: number = 1
     ) {
         if (_level < 1 || _level > 5) {
@@ -64,8 +90,12 @@ export abstract class BaseJoker implements Joker {
     }
 
     /**
-     * Apply the joker's effect to a hand
-     * This method should be implemented by specific joker types
+     * Calculate bonus points based on the current game state
+     * This method must be implemented by specific joker types
      */
-    abstract applyEffect(hand: readonly any[]): number // TODO: Replace 'any' with proper hand type
+    abstract calculateBonus(params: {
+        holeCards: readonly Card[];
+        playedHand?: readonly Card[];
+        phase: Phase;
+    }): number
 } 

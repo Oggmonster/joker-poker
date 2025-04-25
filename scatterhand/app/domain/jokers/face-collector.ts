@@ -1,35 +1,44 @@
-import { BaseJoker, JokerRarity } from '../joker'
+import { BaseJoker, GamePhase, JokerRarity, JokerType } from '../joker'
 import { Card, Rank } from '../cards'
 
 /**
  * A joker that gives bonus points for face cards (J, Q, K)
  */
 export class FaceCollector extends BaseJoker {
-    private static readonly BASE_BONUS = 100
-    private static readonly LEVEL_BONUS = 100
+    private static readonly BASE_BONUS = 200
+    private static readonly LEVEL_BONUS = 200
+    private static readonly FACE_CARDS = [Rank.JACK, Rank.QUEEN, Rank.KING]
 
-    constructor(id: string) {
+    constructor() {
         super(
-            id,
+            'face-collector',
             'Face Collector',
-            'Bonus points for face cards in your hand',
-            JokerRarity.UNCOMMON
+            `${FaceCollector.BASE_BONUS} points for each face card (Jack, Queen, King)`,
+            JokerRarity.UNCOMMON,
+            JokerType.PLAYER
         )
     }
 
-    applyEffect(hand: readonly Card[]): number {
-        const faceCards = hand.filter(card => 
-            card.rank === Rank.JACK || 
-            card.rank === Rank.QUEEN || 
-            card.rank === Rank.KING
-        )
+    private countFaceCards(cards: readonly Card[]): number {
+        return cards.filter(card => FaceCollector.FACE_CARDS.includes(card.rank)).length
+    }
+
+    public calculateBonus({ holeCards, playedHand }: {
+        holeCards: readonly Card[]
+        playedHand?: readonly Card[]
+        phase: GamePhase
+    }): number {
+        // Consider all available cards
+        const allCards = playedHand ? [...holeCards, ...playedHand] : holeCards
+        
+        const faceCount = this.countFaceCards(allCards)
+        if (faceCount === 0) return 0
 
         const bonus = FaceCollector.BASE_BONUS + 
             (FaceCollector.LEVEL_BONUS * (this.level - 1))
 
-        // Exponential bonus for collecting multiple face cards
-        return faceCards.length > 0 ? 
-            bonus * Math.pow(2, faceCards.length - 1) : 0
+        // Linear bonus for each face card
+        return bonus * faceCount
     }
 
     getEffectDescription(): string {

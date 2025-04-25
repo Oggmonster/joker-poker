@@ -1,32 +1,42 @@
-import { BaseJoker, JokerRarity } from '../joker'
+import { BaseJoker, GamePhase, JokerRarity, JokerType } from '../joker'
 import { Card, Suit } from '../cards'
 
 /**
- * A joker that multiplies the score for each heart in the hand
+ * A joker that multiplies points based on the number of hearts
  */
 export class HeartMultiplier extends BaseJoker {
-    private static readonly BASE_MULTIPLIER = 50
-    private static readonly LEVEL_MULTIPLIER = 50
+    private static readonly BASE_MULTIPLIER = 0.5; // 50% bonus per heart
+    private static readonly LEVEL_MULTIPLIER = 0.5; // Additional 50% per level
 
-    constructor(id: string) {
+    constructor() {
         super(
-            id,
+            'heart-multiplier',
             'Heart Multiplier',
-            'Adds score for each heart in your hand',
-            JokerRarity.COMMON
+            `Multiply points by ${(HeartMultiplier.BASE_MULTIPLIER * 100).toFixed(0)}% for each heart`,
+            JokerRarity.RARE,
+            JokerType.COMMUNITY
         )
     }
 
-    applyEffect(hand: readonly Card[]): number {
-        const heartCount = hand.filter(card => card.suit === Suit.HEARTS).length
-        const multiplier = HeartMultiplier.BASE_MULTIPLIER + 
-            (HeartMultiplier.LEVEL_MULTIPLIER * (this.level - 1))
-        return heartCount * multiplier
+    private countHearts(cards: readonly Card[]): number {
+        return cards.filter(card => card.suit === Suit.HEARTS).length
     }
 
-    getEffectDescription(): string {
+    public calculateBonus({ holeCards, playedHand }: {
+        holeCards: readonly Card[];
+        playedHand?: readonly Card[];
+        phase: GamePhase;
+    }): number {
+        // Consider all available cards
+        const allCards = playedHand ? [...holeCards, ...playedHand] : holeCards;
+        
+        const heartCount = this.countHearts(allCards);
+        if (heartCount === 0) return 0;
+
         const multiplier = HeartMultiplier.BASE_MULTIPLIER + 
-            (HeartMultiplier.LEVEL_MULTIPLIER * (this.level - 1))
-        return `+${multiplier} points per heart`
+            (HeartMultiplier.LEVEL_MULTIPLIER * (this.level - 1));
+
+        // Return the multiplier as points (will be applied as a percentage)
+        return multiplier * heartCount * 100;
     }
 } 

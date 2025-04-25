@@ -1,4 +1,4 @@
-import { BaseJoker, JokerRarity } from '../joker'
+import { BaseJoker, GamePhase, JokerRarity, JokerType } from '../joker'
 import { Card, Rank, RANKS_ORDER } from '../cards'
 
 /**
@@ -8,18 +8,20 @@ export class StraightSeeker extends BaseJoker {
     private static readonly BASE_BONUS = 150
     private static readonly LEVEL_BONUS = 150
 
-    constructor(id: string) {
+    constructor() {
+        const maxGaps = 1; // Level 1 starts with 1 gap
         super(
-            id,
+            'straight-seeker',
             'Straight Seeker',
-            'Bonus points for cards that could form a straight',
-            JokerRarity.RARE
+            `${StraightSeeker.BASE_BONUS} points for 3 cards that could form a straight, doubles for each additional card. Can fill up to ${maxGaps} gap between cards`,
+            JokerRarity.RARE,
+            JokerType.PLAYER
         )
     }
 
-    private findLongestPotentialStraight(hand: readonly Card[]): number {
+    private findLongestPotentialStraight(cards: readonly Card[]): number {
         // Get unique ranks and sort them
-        const ranks = [...new Set(hand.map(card => RANKS_ORDER.indexOf(card.rank)))]
+        const ranks = [...new Set(cards.map(card => RANKS_ORDER.indexOf(card.rank)))]
             .sort((a, b) => a - b)
 
         if (ranks.length === 0) return 0
@@ -69,15 +71,22 @@ export class StraightSeeker extends BaseJoker {
         return maxLength
     }
 
-    applyEffect(hand: readonly Card[]): number {
-        const longestPotential = this.findLongestPotentialStraight(hand)
-        if (longestPotential < 3) return 0
+    public calculateBonus({ holeCards, playedHand }: {
+        holeCards: readonly Card[];
+        playedHand?: readonly Card[];
+        phase: GamePhase;
+    }): number {
+        // Consider all available cards
+        const allCards = playedHand ? [...holeCards, ...playedHand] : holeCards;
+        
+        const longestPotential = this.findLongestPotentialStraight(allCards);
+        if (longestPotential < 3) return 0;
 
         const bonus = StraightSeeker.BASE_BONUS + 
-            (StraightSeeker.LEVEL_BONUS * (this.level - 1))
+            (StraightSeeker.LEVEL_BONUS * (this.level - 1));
 
         // Exponential bonus for longer potential straights
-        return bonus * Math.pow(2, longestPotential - 3)
+        return bonus * Math.pow(2, longestPotential - 3);
     }
 
     getEffectDescription(): string {
