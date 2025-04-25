@@ -1,24 +1,42 @@
 import { Card } from './cards'
-import { Joker } from './joker'
+import { BaseJoker } from './joker'
 import { Player } from './player'
 
 /**
  * Represents the different phases of a round
  */
-export enum RoundPhase {
-    DISCARD = 'DISCARD',
-    SCORING = 'SCORING'
+export enum Phase {
+    FLOP = 'FLOP',
+    TURN = 'TURN',
+    RIVER = 'RIVER',
+    COMPLETE = 'COMPLETE'
+}
+
+export interface HandSelection {
+    cards: Card[];
+    jokers: BaseJoker[];
+    score: number;
+}
+
+export interface PhaseState {
+    boardCards: Card[];
+    boardJokers: BaseJoker[];
+    playerCards: Map<string, Card[]>;
+    playerJokers: Map<string, BaseJoker[]>;
+    selections: Map<string, HandSelection>;
+    phase: Phase;
+    accumulatedScores: Map<string, number>;
 }
 
 export class CommunityCards {
     private cards: Card[] = []
-    private jokers: Joker[] = []
+    private jokers: BaseJoker[] = []
 
     addCard(card: Card): void {
         this.cards.push(card)
     }
 
-    addJoker(joker: Joker): void {
+    addJoker(joker: BaseJoker): void {
         this.jokers.push(joker)
     }
 
@@ -26,7 +44,7 @@ export class CommunityCards {
         return this.cards
     }
 
-    getJokers(): readonly Joker[] {
+    getJokers(): readonly BaseJoker[] {
         return this.jokers
     }
 
@@ -46,300 +64,164 @@ export interface PlayerAction {
  * Manages the state of a poker-style round
  */
 export class RoundState {
-    private phase: RoundPhase
-    private community: CommunityCards
-    private deck: Card[]
-    private jokerPool: Joker[]
-    private playerActions: Map<string, PlayerAction[]>
+    private state: PhaseState;
 
     constructor(
         private readonly players: ReadonlyMap<string, Player>,
         deck: Card[],
-        jokerPool: Joker[]
+        jokerPool: BaseJoker[]
     ) {
-        this.phase = RoundPhase.DISCARD
-        this.community = new CommunityCards()
-        this.deck = [...deck]
-        this.jokerPool = [...jokerPool]
-        this.playerActions = new Map()
+        this.state = {
+            boardCards: [],
+            boardJokers: [],
+            playerCards: new Map(),
+            playerJokers: new Map(),
+            selections: new Map(),
+            phase: Phase.FLOP,
+            accumulatedScores: new Map()
+        };
 
-        // Initialize player actions array for each player
-        for (const playerId of players.keys()) {
-            this.playerActions.set(playerId, [])
-        }
-    }
+        // Initialize player cards and jokers
+        for (const [playerId, player] of players.entries()) {
+            // Initialize empty arrays
+            const playerCards: Card[] = [];
+            const playerJokers: BaseJoker[] = [];
 
-    /**
-     * Start the pre-flop phase
-     */
-    startPreFlop(): void {
-        if (this.phase !== RoundPhase.DISCARD) {
-            throw new Error('Invalid phase transition')
-        }
-
-        // Deal 2 cards and 1 joker to each player
-        for (const player of this.players.values()) {
-            // Deal cards
+            // Deal 2 initial cards
             for (let i = 0; i < 2; i++) {
-                const card = this.drawCard()
-                player.addToHand(card)
+                const card = this.drawCard(deck);
+                playerCards.push(card);
             }
 
-            // Deal joker
-            const joker = this.drawJoker()
+            // Deal 1 initial joker
+            const joker = this.drawJoker(jokerPool);
             if (joker) {
-                player.addJoker(joker)
+                playerJokers.push(joker);
             }
+
+            // Store in state
+            this.state.playerCards.set(playerId, playerCards);
+            this.state.playerJokers.set(playerId, playerJokers);
         }
     }
 
-    /**
-     * Start the flop phase
-     */
-    startFlop(): void {
-        if (this.phase !== RoundPhase.DISCARD) {
-            throw new Error('Invalid phase transition')
-        }
-
-        // Deal 3 community cards
-        for (let i = 0; i < 3; i++) {
-            this.community.addCard(this.drawCard())
-        }
-
-        // Add 1 community joker
-        const joker = this.drawJoker()
-        if (joker) {
-            this.community.addJoker(joker)
-        }
-
-        // Deal jokers to players until they have 2
-        for (const player of this.players.values()) {
-            while (player.getJokers().length < 2) {
-                const joker = this.drawJoker()
-                if (joker) {
-                    player.addJoker(joker)
-                }
-            }
-        }
-
-        this.phase = RoundPhase.SCORING
+    public getCurrentPhase(): Phase {
+        return this.state.phase;
     }
 
-    /**
-     * Start the turn phase
-     */
-    startTurn(): void {
-        if (this.phase !== RoundPhase.SCORING) {
-            throw new Error('Invalid phase transition')
-        }
-
-        // Deal 1 community card
-        this.community.addCard(this.drawCard())
-
-        // Add 1 community joker
-        const joker = this.drawJoker()
-        if (joker) {
-            this.community.addJoker(joker)
-        }
-
-        // Deal jokers to players until they have 3
-        for (const player of this.players.values()) {
-            while (player.getJokers().length < 3) {
-                const joker = this.drawJoker()
-                if (joker) {
-                    player.addJoker(joker)
-                }
-            }
-        }
-
-        this.phase = RoundPhase.SCORING
+    public addBoardCards(cards: Card[]): void {
+        this.state.boardCards.push(...cards);
     }
 
-    /**
-     * Start the river phase
-     */
-    startRiver(): void {
-        if (this.phase !== RoundPhase.SCORING) {
-            throw new Error('Invalid phase transition')
-        }
-
-        // Deal 1 community card
-        this.community.addCard(this.drawCard())
-
-        // Add 1 community joker
-        const joker = this.drawJoker()
-        if (joker) {
-            this.community.addJoker(joker)
-        }
-
-        this.phase = RoundPhase.SCORING
+    public addBoardJokers(jokers: BaseJoker[]): void {
+        this.state.boardJokers.push(...jokers);
     }
 
-    /**
-     * Start the scoring phase
-     */
-    startScoring(): void {
-        if (this.phase !== RoundPhase.SCORING) {
-            throw new Error('Invalid phase transition')
-        }
-        this.phase = RoundPhase.SCORING
+    public addPlayerCards(playerId: string, cards: Card[]): void {
+        const currentCards = this.state.playerCards.get(playerId) || [];
+        this.state.playerCards.set(playerId, [...currentCards, ...cards]);
     }
 
-    /**
-     * Process a player's action
-     */
-    processPlayerAction(playerId: string, action: PlayerAction): boolean {
-        const player = this.players.get(playerId)
-        if (!player) return false
+    public addPlayerJokers(playerId: string, jokers: BaseJoker[]): void {
+        const currentJokers = this.state.playerJokers.get(playerId) || [];
+        this.state.playerJokers.set(playerId, [...currentJokers, ...jokers]);
+    }
 
-        switch (action.type) {
-            case 'DISCARD_CARD': {
-                if (!action.cardIndices || this.phase !== RoundPhase.DISCARD) {
-                    return false
-                }
-                
-                // Sort indices in descending order to avoid shifting issues
-                const sortedIndices = [...action.cardIndices].sort((a, b) => b - a)
-                const playerCards = player.getCards()
-                
-                // Validate indices
-                if (sortedIndices.some(i => i < 0 || i >= playerCards.length)) {
-                    return false
-                }
-
-                // Remove cards from player's hand
-                for (const index of sortedIndices) {
-                    const discardedCard = playerCards[index]
-                    player.removeFromHand(index)
-                    // Deal a new card to replace the discarded one
-                    const newCard = this.drawCard()
-                    player.addToHand(newCard)
-                }
-                break
-            }
-            case 'DISCARD_JOKER': {
-                if (!action.jokerIds || this.phase !== RoundPhase.DISCARD) {
-                    return false
-                }
-
-                const playerJokers = player.getJokers()
-                const jokerSet = new Set(action.jokerIds)
-
-                // Validate joker IDs
-                if (action.jokerIds.some(id => !playerJokers.some(j => j.id === id))) {
-                    return false
-                }
-
-                // Remove jokers from player's hand
-                for (const jokerId of action.jokerIds) {
-                    player.removeJoker(jokerId)
-                    // Deal a new joker to replace the discarded one
-                    const newJoker = this.drawJoker()
-                    if (newJoker) {
-                        player.addJoker(newJoker)
-                    }
-                }
-                break
-            }
-            case 'SELECT_CARDS': {
-                if (!action.cardIndices || this.phase !== RoundPhase.SCORING) {
-                    return false
-                }
-                if (action.cardIndices.length !== 5) {
-                    return false
-                }
-
-                const availableCards = [
-                    ...player.getCards(),
-                    ...this.community.getCards()
-                ]
-
-                // Validate indices and ensure no duplicates
-                const uniqueIndices = new Set(action.cardIndices)
-                if (uniqueIndices.size !== 5 || 
-                    action.cardIndices.some(i => i < 0 || i >= availableCards.length)) {
-                    return false
-                }
-
-                // Store selected cards in player state
-                const selectedCards = action.cardIndices.map(i => availableCards[i])
-                if (selectedCards.some(card => !card)) {
-                    return false
-                }
-                player.setSelectedCards(selectedCards as Card[])
-                break
-            }
-            case 'SELECT_JOKERS': {
-                if (!action.jokerIds || this.phase !== RoundPhase.SCORING) {
-                    return false
-                }
-                if (action.jokerIds.length > 3) {
-                    return false
-                }
-
-                const availableJokers = [
-                    ...player.getJokers(),
-                    ...this.community.getJokers()
-                ]
-
-                // Validate joker IDs and ensure no duplicates
-                const uniqueJokerIds = new Set(action.jokerIds)
-                if (uniqueJokerIds.size !== action.jokerIds.length ||
-                    action.jokerIds.some(id => !availableJokers.some(j => j.id === id))) {
-                    return false
-                }
-
-                // Store selected jokers in player state
-                const selectedJokers = action.jokerIds.map(id => 
-                    availableJokers.find(j => j.id === id)!
-                )
-                player.setSelectedJokers(selectedJokers)
-                break
-            }
+    public submitSelection(playerId: string, selection: HandSelection): void {
+        if (!this.isValidSelection(selection)) {
+            throw new Error('Invalid selection: Must have exactly 5 cards and 3 jokers');
         }
 
-        this.playerActions.get(playerId)?.push(action)
-        return true
+        this.state.selections.set(playerId, selection);
+        
+        // Add score to accumulated total
+        const currentScore = this.state.accumulatedScores.get(playerId) || 0;
+        this.state.accumulatedScores.set(playerId, currentScore + selection.score);
+    }
+
+    public getPlayerCards(playerId: string): Card[] {
+        return [...(this.state.playerCards.get(playerId) || [])];
+    }
+
+    public getPlayerJokers(playerId: string): BaseJoker[] {
+        return [...(this.state.playerJokers.get(playerId) || [])];
+    }
+
+    public getAvailableCards(playerId: string): Card[] {
+        const playerCards = this.state.playerCards.get(playerId) || [];
+        return [...this.state.boardCards, ...playerCards];
+    }
+
+    public getAvailableJokers(playerId: string): BaseJoker[] {
+        const playerJokers = this.state.playerJokers.get(playerId) || [];
+        return [...this.state.boardJokers, ...playerJokers];
+    }
+
+    public getAccumulatedScore(playerId: string): number {
+        return this.state.accumulatedScores.get(playerId) || 0;
+    }
+
+    public getCurrentSelection(playerId: string): HandSelection | undefined {
+        return this.state.selections.get(playerId);
+    }
+
+    public advancePhase(): void {
+        switch (this.state.phase) {
+            case Phase.FLOP:
+                this.state.phase = Phase.TURN;
+                break;
+            case Phase.TURN:
+                this.state.phase = Phase.RIVER;
+                break;
+            case Phase.RIVER:
+                this.state.phase = Phase.COMPLETE;
+                break;
+            default:
+                throw new Error('Round is already complete');
+        }
+        // Clear selections for new phase
+        this.state.selections.clear();
+    }
+
+    public isComplete(): boolean {
+        return this.state.phase === Phase.COMPLETE;
+    }
+
+    private isValidSelection(selection: HandSelection): boolean {
+        return selection.cards.length === 5 && selection.jokers.length === 3;
+    }
+
+    // Helper method to get the expected counts for the current phase
+    public getPhaseRequirements(): { boardCards: number; boardJokers: number; playerCards: number; playerJokers: number } {
+        switch (this.state.phase) {
+            case Phase.FLOP:
+                return { boardCards: 3, boardJokers: 3, playerCards: 2, playerJokers: 2 };
+            case Phase.TURN:
+                return { boardCards: 4, boardJokers: 4, playerCards: 3, playerJokers: 3 };
+            case Phase.RIVER:
+                return { boardCards: 5, boardJokers: 5, playerCards: 4, playerJokers: 4 };
+            default:
+                throw new Error('Round is complete');
+        }
     }
 
     /**
      * Draw a card from the deck
      */
-    private drawCard(): Card {
-        if (this.deck.length === 0) {
+    private drawCard(deck: Card[]): Card {
+        if (deck.length === 0) {
             throw new Error('No cards left in deck')
         }
-        return this.deck.pop()!
+        return deck.pop()!
     }
 
     /**
      * Draw a joker from the pool
      */
-    private drawJoker(): Joker | undefined {
-        if (this.jokerPool.length === 0) {
+    private drawJoker(jokerPool: BaseJoker[]): BaseJoker | undefined {
+        if (jokerPool.length === 0) {
             return undefined
         }
-        return this.jokerPool.pop()
-    }
-
-    /**
-     * Get the current phase
-     */
-    getPhase(): RoundPhase {
-        return this.phase
-    }
-
-    /**
-     * Get the community cards and jokers
-     */
-    getCommunityCards(): CommunityCards {
-        return this.community
-    }
-
-    /**
-     * Get all actions taken by a player
-     */
-    getPlayerActions(playerId: string): readonly PlayerAction[] {
-        return this.playerActions.get(playerId) || []
+        return jokerPool.pop()
     }
 } 
