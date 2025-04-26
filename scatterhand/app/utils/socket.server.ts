@@ -1,7 +1,6 @@
 import { Server } from 'socket.io'
 import type { Server as HTTPServer } from 'http'
 import type { Socket } from 'socket.io'
-import { da } from '@faker-js/faker'
 
 let io: Server | null = null
 
