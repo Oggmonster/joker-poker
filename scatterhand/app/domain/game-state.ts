@@ -1,12 +1,10 @@
 import { Card } from './cards'
 import { Deck } from './deck'
 import { BaseJoker } from './joker'
-import { Player, PlayerStatus } from './player'
-import { RoundPhase } from './round-state'
+import { Player } from './player'
 
-export type GameSection = 'DISCARD' | 'SCORING'
 
-export type PlayerActionType = 'DISCARD' | 'SELECT_CARDS' | 'SELECT_JOKERS'
+export type PlayerActionType = 'SELECT_CARDS' | 'SELECT_JOKERS'
 
 export interface PlayerAction {
     type: PlayerActionType
@@ -20,7 +18,6 @@ export type GamePhase = 'COUNTDOWN' | 'FLOP' | 'TURN' | 'RIVER' | 'SHOWDOWN';
 export interface GameState {
     id: string
     players: Player[]
-    currentSection: GameSection
     sectionActions: PlayerAction[]
     communityCards: Card[]
     communityJokers: BaseJoker[]
@@ -47,7 +44,6 @@ export class GameStateManager {
         this.state = {
             id,
             players,
-            currentSection: 'DISCARD',
             sectionActions: [],
             communityCards: [],
             communityJokers: [],
@@ -74,12 +70,6 @@ export class GameStateManager {
         }
 
         switch (action.type) {
-            case 'DISCARD':
-                if (!action.cardIndices) {
-                    throw new Error('Card indices must be specified for discard');
-                }
-                this.handleDiscard(player, action.cardIndices);
-                break;
             case 'SELECT_CARDS':
                 if (!action.selectedCards) {
                     throw new Error('Cards must be specified for selection');
@@ -98,32 +88,9 @@ export class GameStateManager {
         this.moveToNextPlayer();
     }
 
-    private handleDiscard(player: Player, cardIndices: number[]): void {
-        if (this.state.currentSection !== 'DISCARD') {
-            throw new Error('Can only discard during discard phase');
-        }
-        // Remove cards at specified indices from player's hand
-        cardIndices.sort((a, b) => b - a); // Sort in descending order to remove from end first
-        cardIndices.forEach(index => {
-            player.removeFromHand(index);
-        });
-        // Draw new cards to replace discarded ones
-        for (let i = 0; i < cardIndices.length; i++) {
-            const newCard = this.deck.drawCard();
-            player.addToHand(newCard);
-        }
-    }
 
     private moveToNextPlayer(): void {
         this.state.currentPlayerId = (this.state.currentPlayerId + 1) % this.state.players.length;
-    }
-
-    public moveToNextSection(): void {
-        if (this.state.currentSection === 'DISCARD') {
-            this.state.currentSection = 'SCORING';
-        } else {
-            this.state.isComplete = true;
-        }
     }
 
     /**

@@ -8,7 +8,12 @@ import { GameSection, PlayerAction } from '#app/domain/game-state'
 import { type Route } from './+types/index.ts'
 import { useLoaderData } from 'react-router'
 import { CountdownPhase } from '#app/components/game/countdown-phase'
-import { FlopPhase } from '#app/components/game/flop-phase'
+import { PlayPhase } from '#app/components/game/play-phase.tsx'
+import { HandEvaluator } from '#app/domain/scoring.ts'
+import { Phase } from '#app/domain/round-state.ts'
+import { PlayerScore } from '#app/components/game/scoring-display.tsx'
+import { Deck } from '#app/domain/deck.ts'
+import { JokerDeck } from '#app/domain/joker-deck.ts'
 
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -17,8 +22,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
 export const meta: Route.MetaFunction = ({ data }) => [{ title: `Scatterhand - Game ${data.gameId}` }]
 
-const COUNTDOWN_TIME = 10 // seconds
+const COUNTDOWN_TIME = 5 // seconds
 const PHASE_TIME = 30 // seconds
+const SCORING_TIME = 10 // seconds
 
 // Create mock players with proper Player class instances
 const mockPlayers: Player[] = [
@@ -52,14 +58,15 @@ class MockJoker extends BaseJoker {
 export default function GameRoute({ loaderData }: Route.ComponentProps) { 
     const [gameState, setGameState] = useState<GameState | null>(null)
     const [timeRemaining, setTimeRemaining] = useState(COUNTDOWN_TIME)
-    const [selectedJokers, setSelectedJokers] = useState<BaseJoker[]>([])
+    const [phaseScores, setPhaseScores] = useState<PlayerScore[]>([])
+    const [cardDeck, setCardDeck] = useState<Deck | null>(null)
+    const [jokerDeck, setJokerDeck] = useState<JokerDeck | null>(null)
 
     // Initialize game state
     useEffect(() => {
         const mockGameState: GameState = {
             id: loaderData.gameId,
             players: mockPlayers,
-            currentSection: 'DISCARD',
             sectionActions: [],
             communityCards: [],
             communityJokers: [],
@@ -73,7 +80,13 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
             selectedJokers: {},
             timeRemaining: COUNTDOWN_TIME
         }
+        const newDeck = Deck.createStandard()
+        newDeck.shuffle()
+        const newJokerDeck = JokerDeck.create()
+        newJokerDeck.shuffle()
         setGameState(mockGameState)
+        setCardDeck(newDeck)
+        setJokerDeck(newJokerDeck)
     }, [])
 
     // Handle phase timer
@@ -85,7 +98,7 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
                 if (prev <= 0) {
                     // Time's up - move to next phase
                     handlePhaseEnd()
-                    return gameState.phase === 'COUNTDOWN' ? PHASE_TIME : prev
+                    return gameState.phase === 'COUNTDOWN' ?  PHASE_TIME : prev
                 }
                 return prev - 1
             })
@@ -105,58 +118,17 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
                 // Deal cards and jokers
                 const playerCards: Record<string, Card[]> = {}
                 const playerJokers: Record<string, BaseJoker[]> = {}
-                const communityCards: Card[] = []
-                const communityJokers: BaseJoker[] = []
+                let communityCards: Card[] = []
+                let communityJokers: BaseJoker[] = []
+               
 
-                // TODO: Implement actual card/joker dealing logic
-                // For now, use mock data
                 prev.players.forEach(player => {
-                    playerCards[player.id] = [
-                        new Card(Suit.HEARTS, Rank.ACE),
-                        new Card(Suit.SPADES, Rank.KING)
-                    ]
-                    playerJokers[player.id] = [
-                        new MockJoker(
-                            'basic-joker',
-                            'Basic Joker',
-                            'Basic effect',
-                            JokerRarity.COMMON,
-                            JokerType.PLAYER
-                        )
-                    ]
+                    playerCards[player.id] = cardDeck?.drawCards(2) ?? []
+                    playerJokers[player.id] = jokerDeck?.drawPlayerJokers(3) ?? []
                 })
 
-                // Add community cards and jokers
-                communityCards.push(
-                    new Card(Suit.DIAMONDS, Rank.QUEEN),
-                    new Card(Suit.CLUBS, Rank.JACK),
-                    new Card(Suit.HEARTS, Rank.TEN)
-                )
-                communityJokers.push(
-                    new MockJoker(
-                        'wild-joker',
-                        'Wild Joker',
-                        'Wild effect',
-                        JokerRarity.RARE,
-                        JokerType.COMMUNITY,
-                        2
-                    ),
-                    new MockJoker(
-                        'multiply-joker',
-                        'Multiply Joker',
-                        'Multiply effect',
-                        JokerRarity.UNCOMMON,
-                        JokerType.COMMUNITY,
-                        3
-                    ),
-                    new MockJoker(
-                        'basic-joker-2',
-                        'Basic Joker',
-                        'Basic effect',
-                        JokerRarity.COMMON,
-                        JokerType.COMMUNITY
-                    )
-                )
+                communityCards = [...cardDeck?.drawCards(3) ?? []]
+                communityJokers = [...jokerDeck?.drawCommunityJokers(3) ?? []]
 
                 return {
                     ...prev,
@@ -173,72 +145,57 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
         })
     }, [gameState])
 
-    // Handle joker selection
-    const handleJokerSelect = useCallback((joker: BaseJoker) => {
-        setSelectedJokers(prev => {
-            const isSelected = prev.some(j => j.id === joker.id)
-            if (isSelected) {
-                return prev.filter(j => j.id !== joker.id)
-            }
-            if (prev.length < 3) {
-                return [...prev, joker]
-            }
-            return prev
-        })
-    }, [])
+    
 
     // Handle play hand
-    const handlePlayHand = useCallback(() => {
-        if (!gameState || selectedJokers.length !== 3) return
+    const handlePlayHand = (holeCards: Card[], selectedJokers: BaseJoker[], playedCards: Card[]) => {
+        if (!gameState) return
 
-        setGameState(prev => {
-            if (!prev) return null
+        console.log(holeCards, selectedJokers, playedCards)
 
-            const currentPlayer = prev.players[prev.currentPlayerId]
-            if (!currentPlayer) return prev
-
-            return {
-                ...prev,
-                selectedJokers: {
-                    ...prev.selectedJokers,
-                    [currentPlayer.id]: selectedJokers
-                }
-            }
-        })
-    }, [gameState, selectedJokers])
+        const result = HandEvaluator.evaluate(playedCards)
+        let score = result.baseScore
+        //apply joker bonuses
+        selectedJokers.forEach(joker => {
+            score += joker.calculateBonus({
+                holeCards,
+                playedHand: playedCards,
+                phase: Phase.FLOP,
+            })
+        })        
+    }
 
     if (!gameState || !gameState.players.length) {
         return <div>Loading...</div>
     }
 
+    if (gameState.phase === 'COUNTDOWN') {
+        return (
+            <CountdownPhase
+                players={gameState.players}
+                timeRemaining={timeRemaining}
+                className="flex-1"
+            />
+        )
+    }
+
     const currentPlayer = gameState.players[gameState.currentPlayerId]
     if (!currentPlayer) return <div>Error: No current player</div>
-
     const playerCards = gameState.playerCards[currentPlayer.id]
     if (!playerCards) return <div>Error: No cards for current player</div>
 
-    const playerJoker = gameState.playerJokers[currentPlayer.id]?.[0]
-    if (!playerJoker) return <div>Error: No joker for current player</div>
-
+    const playerJokers = gameState.playerJokers[currentPlayer.id]
+    if (!playerJokers) return <div>Error: No jokers for current player</div>
     return (
         <div className="flex flex-col h-full gap-4 p-4">
-            {gameState.phase === 'COUNTDOWN' && (
-                <CountdownPhase
-                    players={gameState.players}
-                    timeRemaining={timeRemaining}
-                    className="flex-1"
-                />
-            )}
 
             {gameState.phase === 'FLOP' && (
-                <FlopPhase
+                <PlayPhase
                     player={currentPlayer}
                     playerCards={playerCards}
-                    playerJoker={playerJoker}
+                    playerJokers={playerJokers}
                     communityCards={gameState.communityCards}
                     communityJokers={gameState.communityJokers}
-                    selectedJokers={selectedJokers}
-                    onJokerSelect={handleJokerSelect}
                     onPlayHand={handlePlayHand}
                     timeRemaining={timeRemaining}
                     className="flex-1"

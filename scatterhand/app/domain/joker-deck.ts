@@ -1,11 +1,11 @@
 import { BaseJoker, JokerType } from './joker'
 import { PairUp } from './jokers/hand-rank-jokers'
-import { DiamondDazzle } from './jokers/suit-jokers'
+import { ClubCrawl, DiamondDazzle, Heartwarming, SpadeSurge } from './jokers/suit-jokers'
 import { OneEyedJack } from './jokers/one-eyed-jack'
 import { RiverGod } from './jokers/phase-jokers'
 import { PokerFace } from './jokers/poker-face'
 import { TheBrunson } from './jokers/the-brunson'
-import { Rank2Power } from './jokers/rank-power-jokers'
+import { Rank10Power, Rank2Power, Rank3Power, Rank4Power, Rank5Power, Rank6Power, Rank7Power, Rank8Power, Rank9Power, RankAPower, RankJPower, RankKPower, RankQPower } from './jokers/rank-power-jokers'
 import { Lollipops } from './jokers/lollipops'
 import { Eagles } from './jokers/eagles'
 import { Blaze } from './jokers/blaze'
@@ -44,6 +44,7 @@ import { Broadway } from './jokers/broadway'
 import { BlackMariah } from './jokers/black-mariah'
 import { BigChick } from './jokers/big-chick'
 import { AceInTheHole } from './jokers/ace-in-the-hole'
+import { DualThreat, EdgeFlush, FlushLane, MiddleMadness, PairedUp, SuitedSpeed } from './jokers/uncommon-community-jokers'
 
 /**
  * Manages a collection of jokers and handles their distribution
@@ -95,18 +96,40 @@ export class JokerDeck {
         deck.addPlayerJoker(new DeadMansHand())
         deck.addPlayerJoker(new BigChick())
         deck.addPlayerJoker(new AceInTheHole())
+        deck.addPlayerJoker(new ColorWeaver())
+        deck.addPlayerJoker(new Broadway())
+        deck.addPlayerJoker(new BlackMariah())
+        deck.addPlayerJoker(new FourHorsemen())
+        deck.addPlayerJoker(new FlushRush())
+
 
         // Add community jokers
         deck.addCommunityJoker(new PairUp())
         deck.addCommunityJoker(new DiamondDazzle())
+        deck.addCommunityJoker(new Heartwarming())
+        deck.addCommunityJoker(new ClubCrawl())
+        deck.addCommunityJoker(new SpadeSurge())
         deck.addCommunityJoker(new Rank2Power())
+        deck.addCommunityJoker(new Rank3Power())
+        deck.addCommunityJoker(new Rank4Power())
+        deck.addCommunityJoker(new Rank5Power())
+        deck.addCommunityJoker(new Rank6Power())
+        deck.addCommunityJoker(new Rank7Power())
+        deck.addCommunityJoker(new Rank8Power())
+        deck.addCommunityJoker(new Rank9Power())
+        deck.addCommunityJoker(new Rank10Power())
+        deck.addCommunityJoker(new RankJPower())
+        deck.addCommunityJoker(new RankQPower())
+        deck.addCommunityJoker(new RankKPower())
+        deck.addCommunityJoker(new RankAPower())
         deck.addCommunityJoker(new HeartMultiplier())
-        deck.addCommunityJoker(new FlushRush())
-        deck.addCommunityJoker(new FourHorsemen())
-        deck.addCommunityJoker(new ColorWeaver())
-        deck.addCommunityJoker(new Broadway())
-        deck.addCommunityJoker(new BlackMariah())
-
+        deck.addCommunityJoker(new FlushLane())
+        deck.addCommunityJoker(new DualThreat())
+        deck.addCommunityJoker(new PairedUp())
+        deck.addCommunityJoker(new MiddleMadness())
+        deck.addCommunityJoker(new SuitedSpeed())
+        deck.addCommunityJoker(new EdgeFlush())
+        
         return deck
     }
 
@@ -125,7 +148,7 @@ export class JokerDeck {
      */
     public addCommunityJoker(joker: BaseJoker): void {
         if (joker.type !== JokerType.COMMUNITY) {
-            throw new Error('Can only add community jokers to community deck')
+            throw new Error('Can only add community jokers to community deck ' + joker.name)
         }
         this.communityJokers.push(joker)
     }
@@ -148,6 +171,17 @@ export class JokerDeck {
         if (this.communityJokers.length === 0) return undefined
         const index = Math.floor(Math.random() * this.communityJokers.length)
         return this.communityJokers.splice(index, 1)[0]
+    }
+
+    public drawPlayerJokers(count: number): BaseJoker[] {
+        const jokers: BaseJoker[] = []
+        for (let i = 0; i < count; i++) {
+            const joker = this.drawPlayerJoker()
+            if (joker) {
+                jokers.push(joker)
+            }
+        }
+        return jokers
     }
 
     /**

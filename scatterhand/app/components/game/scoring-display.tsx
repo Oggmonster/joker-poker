@@ -1,13 +1,13 @@
 import { BaseJoker } from '#app/domain/joker'
 import { cn } from '#app/utils/cn'
 
-interface JokerScore {
+export interface JokerScore {
     joker: BaseJoker
     score: number
     description: string
 }
 
-interface PlayerScore {
+export interface PlayerScore {
     playerId: string
     playerName: string
     baseScore: number
@@ -15,7 +15,7 @@ interface PlayerScore {
     totalScore: number
 }
 
-interface ScoringDisplayProps {
+export interface ScoringDisplayProps {
     scores: PlayerScore[]
     className?: string
 }

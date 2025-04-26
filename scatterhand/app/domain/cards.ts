@@ -83,12 +83,14 @@ function getSuitDisplay(suit: Suit): string {
 }
 
 export class Card {
+    readonly id: string
     readonly suit: Suit
     readonly rank: Rank
 
     constructor(suit: Suit, rank: Rank) {
         this.suit = suit
         this.rank = rank
+        this.id = `${suit}-${rank}`
     }
 
     toString(): string {
