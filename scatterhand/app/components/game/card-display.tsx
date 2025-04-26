@@ -1,10 +1,10 @@
-import { Card as CardModel, Suit, Rank } from '#app/domain/cards'
+import { Card, Suit, Rank } from '#app/domain/cards'
 import { cn } from '#app/utils/cn'
 
 interface CardProps {
-    card?: CardModel
-    isHidden?: boolean
-    isHighlighted?: boolean
+    card: Card
+    isSelected?: boolean
+    onClick?: () => void
     className?: string
 }
 
@@ -15,7 +15,7 @@ const SUIT_SYMBOLS = {
     [Suit.SPADES]: '♠'
 }
 
-const RANK_SYMBOLS = {
+const RANK_DISPLAY = {
     [Rank.ACE]: 'A',
     [Rank.TWO]: '2',
     [Rank.THREE]: '3',
@@ -34,59 +34,40 @@ const RANK_SYMBOLS = {
 /**
  * Displays a playing card with rank and suit
  */
-export function CardDisplay({
-    card,
-    isHidden = false,
-    isHighlighted = false,
-    className
-}: CardProps) {
-    const isRed = card && (card.suit === Suit.HEARTS || card.suit === Suit.DIAMONDS)
+export function CardDisplay({ card, isSelected, onClick, className }: CardProps) {
+    const isRed = card.suit === Suit.HEARTS || card.suit === Suit.DIAMONDS
 
     return (
         <div 
             className={cn(
-                'relative w-16 h-24',
-                'bg-white rounded-lg shadow-md',
-                'flex flex-col justify-between p-2',
-                'font-bold select-none',
-                isHighlighted && 'ring-2 ring-yellow-400',
-                isHidden && 'bg-blue-900 text-transparent',
-                'transition-all duration-200',
+                "w-full h-full rounded-lg p-2 cursor-pointer transition-all",
+                "bg-white hover:bg-gray-50",
+                isSelected && "ring-4 ring-yellow-400",
                 className
             )}
+            onClick={onClick}
         >
-            {!isHidden && card ? (
-                <>
-                    {/* Top Left */}
-                    <div className={cn(
-                        'flex flex-col items-start leading-none',
-                        isRed ? 'text-red-600' : 'text-black'
-                    )}>
-                        <span>{RANK_SYMBOLS[card.rank]}</span>
-                        <span>{SUIT_SYMBOLS[card.suit]}</span>
-                    </div>
+            <div className={cn(
+                "flex flex-col h-full",
+                isRed ? "text-red-600" : "text-black"
+            )}>
+                {/* Top */}
+                <div className="text-lg font-bold">
+                    {RANK_DISPLAY[card.rank]}
+                    <span className="ml-1">{SUIT_SYMBOLS[card.suit]}</span>
+                </div>
 
-                    {/* Center */}
-                    <div className={cn(
-                        'absolute inset-0 flex items-center justify-center',
-                        'text-3xl pointer-events-none',
-                        isRed ? 'text-red-600' : 'text-black'
-                    )}>
-                        {SUIT_SYMBOLS[card.suit]}
-                    </div>
+                {/* Center */}
+                <div className="flex-1 flex items-center justify-center text-4xl">
+                    {SUIT_SYMBOLS[card.suit]}
+                </div>
 
-                    {/* Bottom Right */}
-                    <div className={cn(
-                        'flex flex-col items-end leading-none rotate-180',
-                        isRed ? 'text-red-600' : 'text-black'
-                    )}>
-                        <span>{RANK_SYMBOLS[card.rank]}</span>
-                        <span>{SUIT_SYMBOLS[card.suit]}</span>
-                    </div>
-                </>
-            ) : (
-                <div className="absolute inset-0 rounded-lg bg-pattern-cards" />
-            )}
+                {/* Bottom */}
+                <div className="text-lg font-bold rotate-180">
+                    {RANK_DISPLAY[card.rank]}
+                    <span className="ml-1">{SUIT_SYMBOLS[card.suit]}</span>
+                </div>
+            </div>
         </div>
     )
 } 

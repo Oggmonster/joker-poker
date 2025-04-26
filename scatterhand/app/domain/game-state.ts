@@ -15,6 +15,8 @@ export interface PlayerAction {
     selectedJokers?: BaseJoker[]
 }
 
+export type GamePhase = 'COUNTDOWN' | 'FLOP' | 'TURN' | 'RIVER' | 'SHOWDOWN';
+
 export interface GameState {
     id: string
     players: Player[]
@@ -23,10 +25,14 @@ export interface GameState {
     communityCards: Card[]
     communityJokers: BaseJoker[]
     playerCards: Record<string, Card[]>
+    playerJokers: Record<string, BaseJoker[]>
     isComplete: boolean
     activeJokers: BaseJoker[]
     currentPlayerId: number
     lastAction: PlayerAction | null
+    phase: GamePhase
+    selectedJokers: Record<string, BaseJoker[]>
+    timeRemaining: number
 }
 
 /**
@@ -46,10 +52,14 @@ export class GameStateManager {
             communityCards: [],
             communityJokers: [],
             playerCards: {},
+            playerJokers: {},
             isComplete: false,
             activeJokers: [],
             currentPlayerId: 0,
-            lastAction: null
+            lastAction: null,
+            phase: 'COUNTDOWN',
+            selectedJokers: {},
+            timeRemaining: 0
         };
     }
 

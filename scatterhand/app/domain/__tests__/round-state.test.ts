@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'vitest'
 import { RoundState, Phase, HandSelection } from '../round-state'
 import { Card, Suit, Rank } from '../cards'
-import { BaseJoker, JokerRarity } from '../joker'
+import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Player } from '../player'
 
 class TestJoker extends BaseJoker {
@@ -11,7 +11,7 @@ class TestJoker extends BaseJoker {
             'Test Joker', 
             'Test Effect',
             JokerRarity.COMMON,
-            'PLAYER'
+            JokerType.PLAYER
         );
     }
 
