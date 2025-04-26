@@ -9,7 +9,7 @@ interface JokerProps {
 /**
  * Displays a joker card with its name, rarity, and level
  */
-export function Joker({ joker, className }: JokerProps) {
+export function JokerDisplay({ joker, className }: JokerProps) {
     return (
         <div 
             className={cn(

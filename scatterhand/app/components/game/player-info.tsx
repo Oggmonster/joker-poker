@@ -12,7 +12,6 @@ interface PlayerInfoProps {
 const STATUS_COLORS = {
     [PlayerStatus.WAITING]: 'text-gray-500',
     [PlayerStatus.PLAYING]: 'text-white',
-    [PlayerStatus.FOLDED]: 'text-red-500',
     [PlayerStatus.ELIMINATED]: 'text-gray-400',
 }
 
@@ -40,7 +39,7 @@ export function PlayerInfo({
         >
             {/* Player name and status */}
             <div className="text-sm font-bold mb-1">
-                {player.getName()}
+                {player.name}
             </div>
             <div className={cn('text-xs', statusColor)}>
                 {status}

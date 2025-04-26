@@ -2,7 +2,7 @@ import { Card } from '#app/domain/cards'
 import { BaseJoker } from '#app/domain/joker'
 import { Player } from '#app/domain/player'
 import { cn } from '#app/utils/cn'
-import { Joker } from './joker'
+import { Joker } from './joker-display'
 import { PlayerInfo } from './player-info'
 
 interface PlayerAreaProps {

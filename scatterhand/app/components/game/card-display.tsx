@@ -34,7 +34,7 @@ const RANK_SYMBOLS = {
 /**
  * Displays a playing card with rank and suit
  */
-export function Card({
+export function CardDisplay({
     card,
     isHidden = false,
     isHighlighted = false,

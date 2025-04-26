@@ -2,7 +2,7 @@ import { Card } from '#app/domain/cards'
 import { BaseJoker } from '#app/domain/joker'
 import { RoundPhase } from '#app/domain/round-state'
 import { cn } from '#app/utils/cn'
-import { Joker } from './joker'
+import { Joker } from './joker-display'
 
 interface CommunityAreaProps {
     phase: RoundPhase

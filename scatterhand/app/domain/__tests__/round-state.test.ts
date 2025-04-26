@@ -8,13 +8,18 @@ class TestJoker extends BaseJoker {
     constructor(id: string) {
         super(
             id,
-            'Test Joker',
+            'Test Joker', 
             'Test Effect',
-            JokerRarity.COMMON
+            JokerRarity.COMMON,
+            'PLAYER'
         );
     }
 
-    applyEffect(): number {
+    calculateBonus({ holeCards, playedHand, phase }: {
+        holeCards: readonly Card[];
+        playedHand?: readonly Card[];
+        phase: Phase;
+    }): number {
         return 100;
     }
 

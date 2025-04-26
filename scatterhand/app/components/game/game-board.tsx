@@ -1,9 +1,11 @@
 import { Card } from '#app/domain/cards'
 import { BaseJoker } from '#app/domain/joker'
 import { Player } from '#app/domain/player'
-import { RoundPhase } from '#app/domain/round-state'
+import { Phase } from '#app/domain/round-state'
 import { cn } from '#app/utils/cn'
+import { CardDisplay } from './card-display'
 import { CommunityArea } from './community-area'
+import { JokerDisplay } from './joker-display'
 import { PlayerArea } from './player-area'
 
 export interface GameBoardProps {
@@ -12,7 +14,7 @@ export interface GameBoardProps {
     playerCards: Record<string, Card[]>
     communityCards: Card[]
     communityJokers: BaseJoker[]
-    currentPhase: RoundPhase
+    currentPhase: Phase
     playerScores: Record<string, number>
 }
 
@@ -69,16 +71,12 @@ export function GameBoard({
         <div className="relative w-full h-full bg-green-800 rounded-lg p-8">
             {/* Community Area */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="text-white font-bold">
-                        {currentPhase === RoundPhase.DISCARD ? 'Discard Phase' : 'Scoring Phase'}
-                    </div>
-                    
+                <div className="flex flex-col items-center gap-4">                    
                     {/* Community Cards */}
                     <div className="flex gap-2">
                         {communityCards.map((card, index) => (
                             <div key={index} className="w-16 h-24 bg-white rounded">
-                                {/* TODO: Render card */}
+                                <CardDisplay card={card} />
                             </div>
                         ))}
                     </div>
@@ -87,7 +85,7 @@ export function GameBoard({
                     <div className="flex gap-2">
                         {communityJokers.map((joker, index) => (
                             <div key={index} className="w-16 h-24 bg-purple-500 rounded">
-                                {/* TODO: Render joker */}
+                                <JokerDisplay joker={joker} />
                             </div>
                         ))}
                     </div>
@@ -107,17 +105,14 @@ export function GameBoard({
                         <div className="flex gap-1">
                             {playerCards[player.id]?.map((card, cardIndex) => (
                                 <div key={cardIndex} className="w-12 h-16 bg-white rounded">
-                                    {/* TODO: Render card */}
+                                    <CardDisplay card={card} />
                                 </div>
                             ))}
                         </div>
 
-                        {/* Player's Score */}
-                        {currentPhase === RoundPhase.SCORING && (
-                            <div className="text-yellow-400 font-bold">
-                                Score: {playerScores[player.id] || 0}
-                            </div>
-                        )}
+                        <div className="text-yellow-400 font-bold">
+                            Score: {playerScores[player.id] || 0}
+                        </div>
                     </div>
                 </div>
             ))}
