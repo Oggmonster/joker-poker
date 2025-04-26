@@ -11,7 +11,7 @@ import { CountdownPhase } from '#app/components/game/countdown-phase'
 import { PlayPhase } from '#app/components/game/play-phase.tsx'
 import { HandEvaluator } from '#app/domain/scoring.ts'
 import { Phase } from '#app/domain/round-state.ts'
-import { PlayerScore } from '#app/components/game/scoring-display.tsx'
+import { PlayerScore, ScoringDisplay } from '#app/components/game/scoring-display.tsx'
 import { Deck } from '#app/domain/deck.ts'
 import { JokerDeck } from '#app/domain/joker-deck.ts'
 
@@ -52,15 +52,20 @@ class MockJoker extends BaseJoker {
 	}
 }
 
+interface ScoredPlay extends PlayerScore {
+	phase: GamePhase
+}
+
 /**
  * Main game route component
  */
 export default function GameRoute({ loaderData }: Route.ComponentProps) { 
     const [gameState, setGameState] = useState<GameState | null>(null)
     const [timeRemaining, setTimeRemaining] = useState(COUNTDOWN_TIME)
-    const [phaseScores, setPhaseScores] = useState<PlayerScore[]>([])
+    const [phaseScores, setPhaseScores] = useState<ScoredPlay[]>([])
     const [cardDeck, setCardDeck] = useState<Deck | null>(null)
     const [jokerDeck, setJokerDeck] = useState<JokerDeck | null>(null)
+    const [showScoring, setShowScoring] = useState(false)
 
     // Initialize game state
     useEffect(() => {
@@ -149,21 +154,169 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
 
     // Handle play hand
     const handlePlayHand = (holeCards: Card[], selectedJokers: BaseJoker[], playedCards: Card[]) => {
-        if (!gameState) return
-
-        console.log(holeCards, selectedJokers, playedCards)
+        if (!gameState || !cardDeck || !jokerDeck) return
 
         const result = HandEvaluator.evaluate(playedCards)
         let score = result.baseScore
-        //apply joker bonuses
-        selectedJokers.forEach(joker => {
-            score += joker.calculateBonus({
+
+        const currentPlayer = gameState.players[gameState.currentPlayerId]
+        if (!currentPlayer) return
+
+        // Calculate joker bonuses
+        const jokerScores = selectedJokers.map(joker => {
+            const jokerScore = joker.calculateBonus({
                 holeCards,
                 playedHand: playedCards,
-                phase: Phase.FLOP,
+                phase: gameState.phase === 'TURN' ? Phase.TURN : Phase.FLOP,
             })
-        })        
+            return {
+                joker,
+                score: jokerScore,
+                description: `Bonus from ${joker.name}`
+            }
+        })
+
+        const totalScore = result.baseScore + jokerScores.reduce((sum, js) => sum + js.score, 0)
+
+        // Create player score object with phase information
+        const playerScore: ScoredPlay = {
+            playerId: currentPlayer.id,
+            playerName: currentPlayer.name,
+            baseScore: result.baseScore,
+            jokerScores,
+            totalScore,
+            phase: gameState.phase
+        }
+
+        setPhaseScores(prev => [...prev, playerScore])
+        setShowScoring(true)
+
+        // After 5 seconds, transition to next phase
+        setTimeout(() => {
+            setShowScoring(false)
+            setGameState(prev => {
+                if (!prev) return null
+
+                // If we're in FLOP phase, move to TURN
+                if (prev.phase === 'FLOP') {
+                    const newPlayerCards: Record<string, Card[]> = { ...prev.playerCards }
+                    const newPlayerJokers: Record<string, BaseJoker[]> = { ...prev.playerJokers }
+                    
+                    // Add one card to each player's hand
+                    for (const player of prev.players) {
+                        const playerHand = newPlayerCards[player.id] || []
+                        const drawnCard = cardDeck.tryDrawCard()
+                        if (drawnCard) {
+                            newPlayerCards[player.id] = [...playerHand, drawnCard]
+                        }
+
+                        // Add one joker to each player
+                        const playerJokers = newPlayerJokers[player.id] || []
+                        const drawnJokers = jokerDeck.drawPlayerJokers(1)
+                        if (drawnJokers.length === 1 && drawnJokers[0]) {
+                            newPlayerJokers[player.id] = [...playerJokers, drawnJokers[0]]
+                        }
+                    }
+
+                    // Add one community card and one community joker
+                    const drawnCard = cardDeck.tryDrawCard()
+                    const drawnJokers = jokerDeck.drawCommunityJokers(1)
+
+                    // Only update if we successfully drew all cards
+                    if (!drawnCard || drawnJokers.length !== 1 || !drawnJokers[0]) {
+                        return prev // Keep the previous state if we couldn't draw new cards
+                    }
+
+                    const newState: GameState = {
+                        ...prev,
+                        phase: 'TURN',
+                        playerCards: newPlayerCards,
+                        playerJokers: newPlayerJokers,
+                        communityCards: [...prev.communityCards, drawnCard],
+                        communityJokers: [...prev.communityJokers, drawnJokers[0]],
+                        timeRemaining: PHASE_TIME
+                    }
+
+                    return newState
+                }
+                // If we're in TURN phase, move to RIVER
+                else if (prev.phase === 'TURN') {
+                    const newPlayerCards: Record<string, Card[]> = { ...prev.playerCards }
+                    const newPlayerJokers: Record<string, BaseJoker[]> = { ...prev.playerJokers }
+                    
+                    // Add one joker to each player for River phase
+                    for (const player of prev.players) {
+                        const playerJokers = newPlayerJokers[player.id] || []
+                        const drawnJokers = jokerDeck.drawPlayerJokers(1)
+                        if (drawnJokers.length === 1 && drawnJokers[0]) {
+                            newPlayerJokers[player.id] = [...playerJokers, drawnJokers[0]]
+                        }
+                    }
+
+                    // Add one community card for River
+                    const drawnCard = cardDeck.tryDrawCard()
+                    if (!drawnCard) {
+                        return prev // Keep previous state if we couldn't draw a card
+                    }
+
+                    const newState: GameState = {
+                        ...prev,
+                        phase: 'RIVER',
+                        playerJokers: newPlayerJokers,
+                        communityCards: [...prev.communityCards, drawnCard],
+                        timeRemaining: PHASE_TIME
+                    }
+
+                    return newState
+                }
+                // If we're in RIVER phase, move to SHOWDOWN
+                else if (prev.phase === 'RIVER') {
+                    // Calculate final scores for all players
+                    const finalScores = phaseScores.reduce((acc, score) => {
+                        const existingScore = acc[score.playerId] || 0
+                        acc[score.playerId] = existingScore + score.totalScore
+                        return acc
+                    }, {} as Record<string, number>)
+
+                    const newState: GameState = {
+                        ...prev,
+                        phase: 'SHOWDOWN',
+                        isComplete: true,
+                        timeRemaining: SCORING_TIME
+                    }
+
+                    // Show final scores
+                    setShowScoring(true)
+                    return newState
+                }
+
+                return prev
+            })
+        }, 5000)
     }
+
+    type GamePlayPhase = 'FLOP' | 'TURN' | 'RIVER' | 'SHOWDOWN'
+    
+    // Group scores by phase
+    const scoresByPhase = phaseScores.reduce((acc, score) => {
+        if (!acc[score.phase]) {
+            acc[score.phase] = []
+        }
+        acc[score.phase].push(score)
+        return acc
+    }, { FLOP: [], TURN: [], RIVER: [], SHOWDOWN: [] } as Record<GamePlayPhase, ScoredPlay[]>)
+
+    // Calculate total scores per player
+    const totalScores = phaseScores.reduce((acc, score) => {
+        if (!acc[score.playerId]) {
+            acc[score.playerId] = {
+                playerName: score.playerName,
+                totalScore: 0
+            }
+        }
+        acc[score.playerId].totalScore += score.totalScore
+        return acc
+    }, {} as Record<string, { playerName: string; totalScore: number }>)
 
     if (!gameState || !gameState.players.length) {
         return <div>Loading...</div>
@@ -186,10 +339,72 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
 
     const playerJokers = gameState.playerJokers[currentPlayer.id]
     if (!playerJokers) return <div>Error: No jokers for current player</div>
+
     return (
         <div className="flex flex-col h-full gap-4 p-4">
+            {showScoring && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+                    <div className="bg-gray-800/90 rounded-lg p-6 w-full max-w-2xl">
+                        {/* Show current phase scores at the top */}
+                        {gameState.phase !== 'SHOWDOWN' && scoresByPhase[gameState.phase as GamePlayPhase].length > 0 && (
+                            <div className="mb-6">
+                                <h2 className="text-2xl font-bold text-white text-center mb-4">
+                                    Current {gameState.phase} Phase Scores
+                                </h2>
+                                <ScoringDisplay
+                                    scores={scoresByPhase[gameState.phase as GamePlayPhase]}
+                                    className="mb-4"
+                                />
+                            </div>
+                        )}
 
-            {gameState.phase === 'FLOP' && (
+                        {/* Show all phase scores in sequence */}
+                        {(['FLOP', 'TURN', 'RIVER'] as GamePlayPhase[]).map(phase => {
+                            const phaseScores = scoresByPhase[phase]
+                            return phaseScores.length > 0 ? (
+                                <div key={phase} className="mb-6">
+                                    <h3 className="text-xl font-bold text-gray-300 mb-2">
+                                        {phase} Phase
+                                    </h3>
+                                    <ScoringDisplay
+                                        scores={phaseScores}
+                                        className="mb-4"
+                                    />
+                                </div>
+                            ) : null
+                        })}
+
+                        {/* Show total scores in showdown */}
+                        {gameState.phase === 'SHOWDOWN' && (
+                            <div className="mt-6">
+                                <h2 className="text-2xl font-bold text-yellow-400 text-center mb-4">
+                                    Final Scores
+                                </h2>
+                                <div className="flex flex-col gap-4">
+                                    {Object.entries(totalScores)
+                                        .sort(([, a], [, b]) => b.totalScore - a.totalScore)
+                                        .map(([playerId, { playerName, totalScore }]) => (
+                                            <div 
+                                                key={playerId}
+                                                className="flex justify-between items-center p-4 bg-gray-700/50 rounded-lg"
+                                            >
+                                                <span className="text-lg font-bold text-white">
+                                                    {playerName}
+                                                </span>
+                                                <span className="text-2xl font-bold text-yellow-400">
+                                                    {totalScore}
+                                                </span>
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {(gameState.phase === 'FLOP' || gameState.phase === 'TURN' || gameState.phase === 'RIVER') && (
                 <PlayPhase
                     player={currentPlayer}
                     playerCards={playerCards}
@@ -200,6 +415,12 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
                     timeRemaining={timeRemaining}
                     className="flex-1"
                 />
+            )}
+
+            {gameState.phase === 'SHOWDOWN' && (
+                <div className="text-center text-2xl font-bold text-white">
+                    Game Complete!
+                </div>
             )}
         </div>
     )
