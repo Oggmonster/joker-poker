@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Card, Suit, Rank } from '#app/domain/cards'
+import { Card } from '#app/domain/cards'
 import { BaseJoker, JokerRarity, JokerType } from '#app/domain/joker'
-import { Player, PlayerStatus } from '#app/domain/player'
+import { Player} from '#app/domain/player'
 import { GameState, GamePhase } from '#app/domain/game-state'
-import { cn } from '#app/utils/cn'
-import { GameSection, PlayerAction } from '#app/domain/game-state'
 import { type Route } from './+types/index.ts'
-import { useLoaderData } from 'react-router'
 import { CountdownPhase } from '#app/components/game/countdown-phase'
 import { PlayPhase } from '#app/components/game/play-phase.tsx'
 import { HandEvaluator } from '#app/domain/scoring.ts'
@@ -33,24 +30,6 @@ const mockPlayers: Player[] = [
 	new Player('3', 'Bot 2', 2, true),
 	new Player('4', 'Bot 3', 3, true),
 ]
-
-// Create a basic joker class for mocking
-class MockJoker extends BaseJoker {
-	constructor(
-		id: string,
-		name: string,
-		effect: string,
-		rarity: JokerRarity,
-		type: JokerType,
-		level: number = 1
-	) {
-		super(id, name, effect, rarity, type, level)
-	}
-
-	calculateBonus(): number {
-		return 0
-	}
-}
 
 interface ScoredPlay extends PlayerScore {
 	phase: GamePhase
@@ -295,7 +274,7 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
         }, 5000)
     }
 
-    type GamePlayPhase = 'FLOP' | 'TURN' | 'RIVER' | 'SHOWDOWN'
+    type GamePlayPhase =  'COUNTDOWN' | 'FLOP' | 'TURN' | 'RIVER' | 'SHOWDOWN'
     
     // Group scores by phase
     const scoresByPhase = phaseScores.reduce((acc, score) => {
@@ -304,7 +283,7 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
         }
         acc[score.phase].push(score)
         return acc
-    }, { FLOP: [], TURN: [], RIVER: [], SHOWDOWN: [] } as Record<GamePlayPhase, ScoredPlay[]>)
+    }, { COUNTDOWN: [], FLOP: [], TURN: [], RIVER: [], SHOWDOWN: [] } as Record<GamePlayPhase, ScoredPlay[]>)
 
     // Calculate total scores per player
     const totalScores = phaseScores.reduce((acc, score) => {
@@ -313,8 +292,9 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
                 playerName: score.playerName,
                 totalScore: 0
             }
+        } else {
+            acc[score.playerId]!.totalScore += score.totalScore
         }
-        acc[score.playerId].totalScore += score.totalScore
         return acc
     }, {} as Record<string, { playerName: string; totalScore: number }>)
 

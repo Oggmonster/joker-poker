@@ -218,3 +218,45 @@
 		border-color: hsl(var(--border));
 	}
 }
+
+/* Card source indicators */
+.from-board-cards {
+	@apply relative;
+}
+
+.from-board-cards::after {
+	content: '';
+	@apply absolute -top-2 left-1/2 w-0.5 h-8 bg-blue-500 transform -translate-x-1/2 opacity-50;
+}
+
+.from-hole-cards {
+	@apply relative;
+}
+
+.from-hole-cards::after {
+	content: '';
+	@apply absolute -bottom-2 left-1/2 w-0.5 h-8 bg-green-500 transform -translate-x-1/2 opacity-50;
+}
+
+/* Card selection animations */
+.card-enter {
+	opacity: 0;
+	transform: scale(0.8);
+}
+
+.card-enter-active {
+	opacity: 1;
+	transform: scale(1);
+	transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
+}
+
+.card-exit {
+	opacity: 1;
+	transform: scale(1);
+}
+
+.card-exit-active {
+	opacity: 0;
+	transform: scale(0.8);
+	transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
+}
