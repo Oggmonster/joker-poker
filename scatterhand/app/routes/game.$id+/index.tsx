@@ -132,146 +132,109 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
     
 
     // Handle play hand
-    const handlePlayHand = (holeCards: Card[], selectedJokers: BaseJoker[], playedCards: Card[]) => {
+    const handlePlayHand = (totalScore: number) => {
         if (!gameState || !cardDeck || !jokerDeck) return
-
-        const result = HandEvaluator.evaluate(playedCards)
-        let score = result.baseScore
 
         const currentPlayer = gameState.players[gameState.currentPlayerId]
         if (!currentPlayer) return
 
-        // Calculate joker bonuses
-        const jokerScores = selectedJokers.map(joker => {
-            const jokerScore = joker.calculateBonus({
-                holeCards,
-                playedHand: playedCards,
-                phase: gameState.phase === 'TURN' ? Phase.TURN : Phase.FLOP,
-            })
-            return {
-                joker,
-                score: jokerScore,
-                description: `Bonus from ${joker.name}`
+        //setPhaseScores(prev => [...prev, playerScore])
+        setGameState(prev => {
+            if (!prev) return null
+
+            // If we're in FLOP phase, move to TURN
+            if (prev.phase === 'FLOP') {
+                const newPlayerCards: Record<string, Card[]> = { ...prev.playerCards }
+                const newPlayerJokers: Record<string, BaseJoker[]> = { ...prev.playerJokers }
+                
+                // Add one card to each player's hand
+                for (const player of prev.players) {
+                    const playerHand = newPlayerCards[player.id] || []
+                    const drawnCard = cardDeck.tryDrawCard()
+                    if (drawnCard) {
+                        newPlayerCards[player.id] = [...playerHand, drawnCard]
+                    }
+
+                    // Add one joker to each player
+                    const playerJokers = newPlayerJokers[player.id] || []
+                    const drawnJokers = jokerDeck.drawPlayerJokers(1)
+                    if (drawnJokers.length === 1 && drawnJokers[0]) {
+                        newPlayerJokers[player.id] = [...playerJokers, drawnJokers[0]]
+                    }
+                }
+
+                // Add one community card and one community joker
+                const drawnCard = cardDeck.tryDrawCard()
+                const drawnJokers = jokerDeck.drawCommunityJokers(1)
+
+                // Only update if we successfully drew all cards
+                if (!drawnCard || drawnJokers.length !== 1 || !drawnJokers[0]) {
+                    return prev // Keep the previous state if we couldn't draw new cards
+                }
+
+                const newState: GameState = {
+                    ...prev,
+                    phase: 'TURN',
+                    playerCards: newPlayerCards,
+                    playerJokers: newPlayerJokers,
+                    communityCards: [...prev.communityCards, drawnCard],
+                    communityJokers: [...prev.communityJokers, drawnJokers[0]],
+                    timeRemaining: PHASE_TIME
+                }
+
+                return newState
             }
+            // If we're in TURN phase, move to RIVER
+            else if (prev.phase === 'TURN') {
+                const newPlayerCards: Record<string, Card[]> = { ...prev.playerCards }
+                const newPlayerJokers: Record<string, BaseJoker[]> = { ...prev.playerJokers }
+                
+                // Add one joker to each player for River phase
+                for (const player of prev.players) {
+
+                    const playerHand = newPlayerCards[player.id] || []
+                    const drawnCard = cardDeck.tryDrawCard()
+                    if (drawnCard) {
+                        newPlayerCards[player.id] = [...playerHand, drawnCard]
+                    }
+
+                    const playerJokers = newPlayerJokers[player.id] || []
+                    const drawnJokers = jokerDeck.drawPlayerJokers(1)
+                    if (drawnJokers.length === 1 && drawnJokers[0]) {
+                        newPlayerJokers[player.id] = [...playerJokers, drawnJokers[0]]
+                    }
+                }
+
+                // Add one community card for River
+                const drawnCard = cardDeck.tryDrawCard()
+                if (!drawnCard) {
+                    return prev // Keep previous state if we couldn't draw a card
+                }
+
+                const newState: GameState = {
+                    ...prev,
+                    phase: 'RIVER',
+                    playerJokers: newPlayerJokers,
+                    communityCards: [...prev.communityCards, drawnCard],
+                    timeRemaining: PHASE_TIME
+                }
+
+                return newState
+            }
+            // If we're in RIVER phase, move to SHOWDOWN
+            else if (prev.phase === 'RIVER') {
+
+                const newState: GameState = {
+                    ...prev,
+                    phase: 'SHOWDOWN',
+                    isComplete: true,
+                    timeRemaining: SCORING_TIME
+                }
+
+                return newState
+            }
+            return prev
         })
-
-        const totalScore = result.baseScore + jokerScores.reduce((sum, js) => sum + js.score, 0)
-
-        // Create player score object with phase information
-        const playerScore: ScoredPlay = {
-            playerId: currentPlayer.id,
-            playerName: currentPlayer.name,
-            baseScore: result.baseScore,
-            jokerScores,
-            totalScore,
-            phase: gameState.phase
-        }
-
-        setPhaseScores(prev => [...prev, playerScore])
-        setShowScoring(true)
-
-        // After 5 seconds, transition to next phase
-        setTimeout(() => {
-            setShowScoring(false)
-            setGameState(prev => {
-                if (!prev) return null
-
-                // If we're in FLOP phase, move to TURN
-                if (prev.phase === 'FLOP') {
-                    const newPlayerCards: Record<string, Card[]> = { ...prev.playerCards }
-                    const newPlayerJokers: Record<string, BaseJoker[]> = { ...prev.playerJokers }
-                    
-                    // Add one card to each player's hand
-                    for (const player of prev.players) {
-                        const playerHand = newPlayerCards[player.id] || []
-                        const drawnCard = cardDeck.tryDrawCard()
-                        if (drawnCard) {
-                            newPlayerCards[player.id] = [...playerHand, drawnCard]
-                        }
-
-                        // Add one joker to each player
-                        const playerJokers = newPlayerJokers[player.id] || []
-                        const drawnJokers = jokerDeck.drawPlayerJokers(1)
-                        if (drawnJokers.length === 1 && drawnJokers[0]) {
-                            newPlayerJokers[player.id] = [...playerJokers, drawnJokers[0]]
-                        }
-                    }
-
-                    // Add one community card and one community joker
-                    const drawnCard = cardDeck.tryDrawCard()
-                    const drawnJokers = jokerDeck.drawCommunityJokers(1)
-
-                    // Only update if we successfully drew all cards
-                    if (!drawnCard || drawnJokers.length !== 1 || !drawnJokers[0]) {
-                        return prev // Keep the previous state if we couldn't draw new cards
-                    }
-
-                    const newState: GameState = {
-                        ...prev,
-                        phase: 'TURN',
-                        playerCards: newPlayerCards,
-                        playerJokers: newPlayerJokers,
-                        communityCards: [...prev.communityCards, drawnCard],
-                        communityJokers: [...prev.communityJokers, drawnJokers[0]],
-                        timeRemaining: PHASE_TIME
-                    }
-
-                    return newState
-                }
-                // If we're in TURN phase, move to RIVER
-                else if (prev.phase === 'TURN') {
-                    const newPlayerCards: Record<string, Card[]> = { ...prev.playerCards }
-                    const newPlayerJokers: Record<string, BaseJoker[]> = { ...prev.playerJokers }
-                    
-                    // Add one joker to each player for River phase
-                    for (const player of prev.players) {
-                        const playerJokers = newPlayerJokers[player.id] || []
-                        const drawnJokers = jokerDeck.drawPlayerJokers(1)
-                        if (drawnJokers.length === 1 && drawnJokers[0]) {
-                            newPlayerJokers[player.id] = [...playerJokers, drawnJokers[0]]
-                        }
-                    }
-
-                    // Add one community card for River
-                    const drawnCard = cardDeck.tryDrawCard()
-                    if (!drawnCard) {
-                        return prev // Keep previous state if we couldn't draw a card
-                    }
-
-                    const newState: GameState = {
-                        ...prev,
-                        phase: 'RIVER',
-                        playerJokers: newPlayerJokers,
-                        communityCards: [...prev.communityCards, drawnCard],
-                        timeRemaining: PHASE_TIME
-                    }
-
-                    return newState
-                }
-                // If we're in RIVER phase, move to SHOWDOWN
-                else if (prev.phase === 'RIVER') {
-                    // Calculate final scores for all players
-                    const finalScores = phaseScores.reduce((acc, score) => {
-                        const existingScore = acc[score.playerId] || 0
-                        acc[score.playerId] = existingScore + score.totalScore
-                        return acc
-                    }, {} as Record<string, number>)
-
-                    const newState: GameState = {
-                        ...prev,
-                        phase: 'SHOWDOWN',
-                        isComplete: true,
-                        timeRemaining: SCORING_TIME
-                    }
-
-                    // Show final scores
-                    setShowScoring(true)
-                    return newState
-                }
-
-                return prev
-            })
-        }, 5000)
     }
 
     type GamePlayPhase =  'COUNTDOWN' | 'FLOP' | 'TURN' | 'RIVER' | 'SHOWDOWN'

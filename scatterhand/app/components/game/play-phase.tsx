@@ -17,7 +17,7 @@ interface PlayPhaseProps {
     playerJokers: BaseJoker[]
     communityCards: Card[]
     communityJokers: BaseJoker[]
-    onPlayHand: (holeCards: Card[], selectedJokers: BaseJoker[], playedCards: Card[]) => void
+    onPlayHand: (totalScore: number) => void
     timeRemaining: number
     className?: string
 }
@@ -181,13 +181,12 @@ export function PlayPhase({
             totalScore: newTotalScore,
             isAnimating: true
         })
-
+        setTotalScore(prev => prev + newTotalScore)
         // After animations complete, update total score and call onPlayHand
-        setTimeout(() => {
-            setTotalScore(prev => prev + newTotalScore)
+        setTimeout(() => {            
             setScoring(prev => prev ? { ...prev, isAnimating: false } : null)
-            onPlayHand(selectedHoleCards, selectedJokers, selectedCards)
-        }, 2000) // Adjust timing based on animations
+            onPlayHand(newTotalScore)
+        }, 1000) // Adjust timing based on animations
     }, [selectedCards, selectedJokers, selectedHoleCards, onPlayHand])
 
     const result = getResult()
