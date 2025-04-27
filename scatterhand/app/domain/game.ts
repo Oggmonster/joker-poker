@@ -1,6 +1,10 @@
+import { Rank } from './cards'
 import { Player } from './player'
 import { Round, RoundType, RoundResult, RoundConfig } from './rounds'
-import { Joker } from './joker'
+import { BigBlindRound } from './rounds/big-blind-round'
+import { BossBlindRound, BossHandicap } from './rounds/boss-blind-round'
+import { SmallBlindRound } from './rounds/small-blind-round'
+import { VsRound } from './rounds/vs-round'
 
 export interface GameConfig {
     minPlayers: number
@@ -26,7 +30,7 @@ export class Game {
     private roundNumber: number
     private currentAnte: number
     private readonly config: GameConfig
-    private globalJokerPool: Joker[]
+    
 
     constructor(config: GameConfig) {
         this.config = config
@@ -35,7 +39,6 @@ export class Game {
         this.currentRound = null
         this.roundNumber = 0
         this.currentAnte = config.startingAnte
-        this.globalJokerPool = []
     }
 
     /**
@@ -48,7 +51,7 @@ export class Game {
         if (this.players.size >= this.config.maxPlayers) {
             return false
         }
-        this.players.set(player.getId(), player)
+        this.players.set(player.id, player)
         return true
     }
 
@@ -106,10 +109,46 @@ export class Game {
         }
 
         this.roundNumber++
+        
         // TODO: Create specific round instance based on type
-        throw new Error('Not implemented')
+        const config = this.createRoundConfig()
+        
+        switch (config.type) {
+            case RoundType.SMALL_BLIND:
+                this.currentRound = new SmallBlindRound(config)
+                break
+            case RoundType.BIG_BLIND:
+                this.currentRound = new BigBlindRound(config)
+                break
+            case RoundType.BOSS_BLIND:
+                this.currentRound = new BossBlindRound(
+                    {
+                        ...config,
+                        handicaps: [this.getRandomBossHandicap()],
+                        maxCardValue: Rank.JACK,
+                    }
+                )
+                break
+            case RoundType.VS_ROUND:
+                this.currentRound = new VsRound(config)
+                break
+            default:
+                throw new Error('Invalid round type')
+        }
+
+        return this.currentRound
     }
 
+    private getRandomBossHandicap(): BossHandicap {
+        const handicaps = Object.values(BossHandicap)
+        const randomIndex = Math.floor(Math.random() * handicaps.length)
+        const handicap = handicaps[randomIndex]        
+        if (!handicap) {
+            throw new Error('Invalid handicap')
+        }
+        return handicap
+    }
+    
     /**
      * Process the results of the current round
      */
@@ -124,9 +163,7 @@ export class Game {
         if (result.eliminatedPlayerId) {
             const eliminatedPlayer = this.players.get(result.eliminatedPlayerId)
             if (eliminatedPlayer) {
-                this.players.delete(result.eliminatedPlayerId)
-                // Add eliminated player's jokers to global pool
-                this.globalJokerPool.push(...eliminatedPlayer.getJokers())
+                eliminatedPlayer.eliminate()                
             }
         }
 
@@ -134,7 +171,6 @@ export class Game {
         if (this.players.size === 1) {
             this.status = GameStatus.FINISHED
         }
-
         return result
     }
 
@@ -164,12 +200,5 @@ export class Game {
      */
     getCurrentAnte(): number {
         return this.currentAnte
-    }
-
-    /**
-     * Get the global joker pool
-     */
-    getGlobalJokerPool(): readonly Joker[] {
-        return this.globalJokerPool
     }
 } 

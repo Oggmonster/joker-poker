@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Card } from '#app/domain/cards'
-import { BaseJoker, JokerRarity, JokerType } from '#app/domain/joker'
+import { BaseJoker} from '#app/domain/joker'
 import { Player} from '#app/domain/player'
-import { GameState, GamePhase } from '#app/domain/game-state'
 import { type Route } from './+types/index.ts'
 import { CountdownPhase } from '#app/components/game/countdown-phase'
 import { PlayPhase } from '#app/components/game/play-phase.tsx'
-import { HandEvaluator } from '#app/domain/scoring.ts'
-import { Phase } from '#app/domain/round-state.ts'
+import { Phase } from '#app/components/game/play-phase.tsx'
 import { PlayerScore, ScoringDisplay } from '#app/components/game/scoring-display.tsx'
 import { Deck } from '#app/domain/deck.ts'
 import { JokerDeck } from '#app/domain/joker-deck.ts'
+import { Game } from '#app/domain/game.ts'
+import { Round } from '#app/domain/rounds.ts'
 
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -19,126 +19,125 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
 export const meta: Route.MetaFunction = ({ data }) => [{ title: `Scatterhand - Game ${data.gameId}` }]
 
-const COUNTDOWN_TIME = 5 // seconds
+const COUNTDOWN_TIME = 300 // 5 minutes
 const PHASE_TIME = 30 // seconds
 const SCORING_TIME = 10 // seconds
 
 // Create mock players with proper Player class instances
 const mockPlayers: Player[] = [
-	new Player('1', 'Player 1', 0, false),
-	new Player('2', 'Bot 1', 1, true),
-	new Player('3', 'Bot 2', 2, true),
-	new Player('4', 'Bot 3', 3, true),
+	new Player('1', 'Player 1', false),
+	new Player('2', 'Bot 1', true),
+	new Player('3', 'Bot 2', true),
+	new Player('4', 'Bot 3', true),
 ]
 
 interface ScoredPlay extends PlayerScore {
-	phase: GamePhase
+	phase: Phase
 }
 
+interface GameState {
+    phase: Phase,
+    playerCards: Card[],
+    playerJokers: BaseJoker[],
+    communityCards: Card[],
+    communityJokers: BaseJoker[]
+}
 /**
  * Main game route component
  */
 export default function GameRoute({ loaderData }: Route.ComponentProps) { 
-    const [gameState, setGameState] = useState<GameState | null>(null)
     const [timeRemaining, setTimeRemaining] = useState(COUNTDOWN_TIME)
-    const [phaseScores, setPhaseScores] = useState<ScoredPlay[]>([])
     const [cardDeck, setCardDeck] = useState<Deck | null>(null)
     const [jokerDeck, setJokerDeck] = useState<JokerDeck | null>(null)
-    const [showScoring, setShowScoring] = useState(false)
+    const [game, setGame] = useState<Game | null>(null)
+    const [round, setRound] = useState<Round | null>(null)
+    const [playerJokers, setPlayerJokers] = useState<BaseJoker[]>([])
+    const [gameState, setGameState] = useState<GameState | null>(null)
 
     // Initialize game state
     useEffect(() => {
-        const mockGameState: GameState = {
-            id: loaderData.gameId,
-            players: mockPlayers,
-            sectionActions: [],
-            communityCards: [],
-            communityJokers: [],
-            playerCards: {},
-            playerJokers: {},
-            isComplete: false,
-            activeJokers: [],
-            currentPlayerId: 0,
-            lastAction: null,
-            phase: 'COUNTDOWN',
-            selectedJokers: {},
-            timeRemaining: COUNTDOWN_TIME
-        }
+        const newGame = new Game({
+            minPlayers: 2,
+            maxPlayers: 6,
+            startingAnte: 100,
+            anteIncrease: 100,
+            rewardThresholdMultiplier: 1.5
+        })
+        newGame.addPlayer(new Player('1', 'Player 1', false))
+        newGame.addPlayer(new Player('2', 'Bot 1', true))
+        newGame.addPlayer(new Player('3', 'Bot 2', true))
+        newGame.addPlayer(new Player('4', 'Bot 3', true))
+        newGame.start()
         const newDeck = Deck.createStandard()
         newDeck.shuffle()
         const newJokerDeck = JokerDeck.create()
         newJokerDeck.shuffle()
-        setGameState(mockGameState)
+        //player start with 5 jokers
+        const playerJokers = newJokerDeck.drawPlayerJokers(5)
+        setPlayerJokers(playerJokers)
         setCardDeck(newDeck)
         setJokerDeck(newJokerDeck)
+        setGame(newGame)
+        setGameState({
+            phase: Phase.COUNTDOWN,
+            playerCards: [],
+            playerJokers: [],
+            communityCards:[],
+            communityJokers: []
+        })
     }, [])
 
     // Handle phase timer
     useEffect(() => {
-        if (!gameState || gameState.isComplete) return
+        if (round === null) return
 
         const timer = setInterval(() => {
             setTimeRemaining(prev => {
                 if (prev <= 0) {
-                    // Time's up - move to next phase
-                    handlePhaseEnd()
-                    return gameState.phase === 'COUNTDOWN' ?  PHASE_TIME : prev
+                    handleRoundEnd()
                 }
                 return prev - 1
             })
         }, 1000)
 
         return () => clearInterval(timer)
-    }, [gameState])
+    }, [round])    
 
-    // Handle phase end
-    const handlePhaseEnd = useCallback(() => {
-        if (!gameState) return
+    const handleRoundStart = useCallback(() => {
+        if (!game) return
+        const newRound = game.startNextRound()
+        setRound(newRound)
+    }, [game])
 
-        setGameState(prev => {
-            if (!prev) return null
+    // Handle round end
+    const handleRoundEnd = useCallback(() => {
+        if (!game) return
+        if (!round) return
 
-            if (prev.phase === 'COUNTDOWN') {
-                // Deal cards and jokers
-                const playerCards: Record<string, Card[]> = {}
-                const playerJokers: Record<string, BaseJoker[]> = {}
-                let communityCards: Card[] = []
-                let communityJokers: BaseJoker[] = []
-               
+        //mocke player scores
+        const playerScores = new Map<string, number>()
+        playerScores.set('1', 100)
+        playerScores.set('2', 200)
+        playerScores.set('3', 300)
+        playerScores.set('4', 400)
 
-                prev.players.forEach(player => {
-                    playerCards[player.id] = cardDeck?.drawCards(2) ?? []
-                    playerJokers[player.id] = jokerDeck?.drawPlayerJokers(3) ?? []
-                })
+        const result = round.processResults(playerScores)        
+        console.log(result)
+        handleRoundStart()
+    }, [game, round])
 
-                communityCards = [...cardDeck?.drawCards(3) ?? []]
-                communityJokers = [...jokerDeck?.drawCommunityJokers(3) ?? []]
+    const handleNextPhase = useCallback(() => {
+        if (!round) return
 
-                return {
-                    ...prev,
-                    phase: 'FLOP',
-                    playerCards,
-                    playerJokers,
-                    communityCards,
-                    communityJokers,
-                    timeRemaining: PHASE_TIME
-                }
-            }
-
-            return prev
-        })
-    }, [gameState])
-
+       
+    }, [game, round])
     
 
     // Handle play hand
     const handlePlayHand = (totalScore: number) => {
-        if (!gameState || !cardDeck || !jokerDeck) return
+        if (!cardDeck || !jokerDeck) return
 
-        const currentPlayer = gameState.players[gameState.currentPlayerId]
-        if (!currentPlayer) return
 
-        //setPhaseScores(prev => [...prev, playerScore])
         setGameState(prev => {
             if (!prev) return null
 
@@ -189,7 +188,7 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
                 const newPlayerCards: Record<string, Card[]> = { ...prev.playerCards }
                 const newPlayerJokers: Record<string, BaseJoker[]> = { ...prev.playerJokers }
                 
-                // Add one joker to each player for River phase
+                // Add one card and one joker to each player for River phase
                 for (const player of prev.players) {
 
                     const playerHand = newPlayerCards[player.id] || []
@@ -248,27 +247,12 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
         return acc
     }, { COUNTDOWN: [], FLOP: [], TURN: [], RIVER: [], SHOWDOWN: [] } as Record<GamePlayPhase, ScoredPlay[]>)
 
-    // Calculate total scores per player
-    const totalScores = phaseScores.reduce((acc, score) => {
-        if (!acc[score.playerId]) {
-            acc[score.playerId] = {
-                playerName: score.playerName,
-                totalScore: 0
-            }
-        } else {
-            acc[score.playerId]!.totalScore += score.totalScore
-        }
-        return acc
-    }, {} as Record<string, { playerName: string; totalScore: number }>)
-
-    if (!gameState || !gameState.players.length) {
-        return <div>Loading...</div>
-    }
-
+    if (!gameState) return <div>Loading...</div>
+   
     if (gameState.phase === 'COUNTDOWN') {
         return (
             <CountdownPhase
-                players={gameState.players}
+                players={game?.getPlayers()}
                 timeRemaining={timeRemaining}
                 className="flex-1"
             />

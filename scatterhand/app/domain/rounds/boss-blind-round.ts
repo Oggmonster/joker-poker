@@ -1,5 +1,5 @@
 import { Round, RoundType, RoundResult, RoundConfig, Reward } from '../rounds'
-import { Card, Rank } from '../cards'
+import { Rank } from '../cards'
 
 /**
  * Types of handicaps that can be applied in boss blind rounds

@@ -1,7 +1,3 @@
-import { Card } from './cards'
-import { Joker } from './joker'
-import { RoundState } from './round-state'
-import { Player } from './player'
 
 export enum RoundType {
     SMALL_BLIND = 'SMALL_BLIND',
@@ -33,17 +29,9 @@ export interface RoundConfig {
  */
 export abstract class Round {
     protected readonly config: RoundConfig
-    protected state: RoundState | null = null
 
     constructor(config: RoundConfig) {
         this.config = config
-    }
-
-    /**
-     * Initialize the round with a deck and players
-     */
-    initialize(players: ReadonlyMap<string, Player>, deck: Card[], jokerPool: Joker[]): void {
-        this.state = new RoundState(players, deck, jokerPool)
     }
 
     /**
@@ -73,13 +61,7 @@ export abstract class Round {
     getRoundNumber(): number {
         return this.config.roundNumber
     }
-
-    /**
-     * Get the current round state
-     */
-    getState(): RoundState | null {
-        return this.state
-    }
+    
 
     /**
      * Process the round results and determine rewards

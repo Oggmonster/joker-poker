@@ -6,8 +6,15 @@ import { useCallback, useState, useEffect } from 'react'
 import { CardDisplay } from './card-display'
 import { JokerDisplay } from './joker-display'
 import { HandEvaluator } from '#app/domain/scoring.ts'
-import { AnimatePresence, motion, MotionProps } from 'framer-motion'
-import { Phase } from '#app/domain/round-state'
+import { AnimatePresence, motion } from 'framer-motion'
+
+export enum Phase {
+    COUNTDOWN = 'COUNTDOWN',
+    FLOP = 'FLOP',
+    TURN = 'TURN',
+    RIVER = 'RIVER',
+    COMPLETE = 'COMPLETE'
+}
 
 const SCORE_THRESHOLD = 100 // Example threshold, adjust as needed
 
