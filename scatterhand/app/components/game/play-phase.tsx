@@ -2,10 +2,14 @@ import { Card } from '#app/domain/cards'
 import { BaseJoker } from '#app/domain/joker'
 import { Player } from '#app/domain/player'
 import { cn } from '#app/utils/cn'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { CardDisplay } from './card-display'
 import { JokerDisplay } from './joker-display'
 import { HandEvaluator } from '#app/domain/scoring.ts'
+import { AnimatePresence, motion, MotionProps } from 'framer-motion'
+import { Phase } from '#app/domain/round-state'
+
+const SCORE_THRESHOLD = 100 // Example threshold, adjust as needed
 
 interface PlayPhaseProps {
     player: Player
@@ -16,6 +20,13 @@ interface PlayPhaseProps {
     onPlayHand: (holeCards: Card[], selectedJokers: BaseJoker[], playedCards: Card[]) => void
     timeRemaining: number
     className?: string
+}
+
+interface ScoringState {
+    baseScore: number
+    jokerBonuses: { joker: BaseJoker; bonus: number }[]
+    totalScore: number
+    isAnimating: boolean
 }
 
 // Add this near the top with other helper functions
@@ -47,6 +58,10 @@ const RARITY_STYLES = {
     }
 }
 
+
+const MotionSpan = motion.span
+const MotionDiv = motion.div
+
 export function PlayPhase({
     player,
     playerCards,
@@ -60,14 +75,26 @@ export function PlayPhase({
     const [selectedJokers, setSelectedJokers] = useState<BaseJoker[]>([])
     const [selectedBoardCards, setSelectedBoardCards] = useState<Card[]>([])
     const [selectedHoleCards, setSelectedHoleCards] = useState<Card[]>([])
+    const [hasDealtCards, setHasDealtCards] = useState(false)
+    const [totalScore, setTotalScore] = useState(0)
+    const [scoring, setScoring] = useState<ScoringState | null>(null)
     const selectedCards = [...selectedBoardCards, ...selectedHoleCards]
+
+    // Add effect to trigger dealing animation
+    useEffect(() => {
+        // Small delay to ensure DOM is ready
+        const timer = setTimeout(() => {
+            setHasDealtCards(true)
+        }, 100)
+        return () => clearTimeout(timer)
+    }, [])
 
     const getResult = () => {
         if (selectedCards.length !== 5) {
             return null
         }        
         const result = HandEvaluator.evaluate(selectedCards)
-        return result
+        return result.handRank
     }
 
     // Handle card selection
@@ -132,6 +159,37 @@ export function PlayPhase({
         return 'from-board-cards'
     }
 
+    const handlePlayHand = useCallback(() => {
+        if (selectedCards.length !== 5 || selectedJokers.length !== 3) return
+
+        const result = HandEvaluator.evaluate(selectedCards)
+        const jokerBonuses = selectedJokers.map(joker => ({
+            joker,
+            bonus: joker.calculateBonus({
+                holeCards: selectedHoleCards,
+                playedHand: selectedCards,
+                phase: Phase.FLOP
+            })
+        }))
+
+        const newTotalScore = result.baseScore + jokerBonuses.reduce((sum, { bonus }) => sum + bonus, 0)
+
+        // Start scoring animation
+        setScoring({
+            baseScore: result.baseScore,
+            jokerBonuses,
+            totalScore: newTotalScore,
+            isAnimating: true
+        })
+
+        // After animations complete, update total score and call onPlayHand
+        setTimeout(() => {
+            setTotalScore(prev => prev + newTotalScore)
+            setScoring(prev => prev ? { ...prev, isAnimating: false } : null)
+            onPlayHand(selectedHoleCards, selectedJokers, selectedCards)
+        }, 2000) // Adjust timing based on animations
+    }, [selectedCards, selectedJokers, selectedHoleCards, onPlayHand])
+
     const result = getResult()
     
     return (
@@ -148,7 +206,9 @@ export function PlayPhase({
                                     key={index} 
                                     className={cn(
                                         "w-32 h-48 transition-all duration-300 ease-in-out transform",
-                                        isCardSelected(card) && "opacity-50 scale-95"
+                                        isCardSelected(card) && "opacity-50 scale-95",
+                                        hasDealtCards && "deal-board-card",
+                                        `deal-delay-${index + 1}`
                                     )}
                                 >
                                     <CardDisplay 
@@ -165,7 +225,9 @@ export function PlayPhase({
                                     key={index} 
                                     className={cn(
                                         "w-32 h-48 transition-all duration-300",
-                                        selectedJokers.includes(joker) && "opacity-50 scale-95"
+                                        selectedJokers.includes(joker) && "opacity-50 scale-95",
+                                        hasDealtCards && "deal-joker",
+                                        `deal-delay-${index + 1}`
                                     )}
                                 >
                                     <JokerDisplay 
@@ -182,7 +244,7 @@ export function PlayPhase({
                 {/* Selected Hand and Jokers - Center Stage */}
                 <div className="flex flex-col items-center gap-4 my-8 w-full max-w-6xl">
                     <div className="text-xl font-bold text-center mb-2">
-                        Your Hand ({selectedCards.length}/5)
+                        Your Hand ({selectedCards.length}/5) {result}
                     </div>
                     <div className="flex gap-12 items-center justify-center">
                         <div className="flex flex-col items-center gap-6">
@@ -253,10 +315,10 @@ export function PlayPhase({
                         {/* Play Hand Button and Clear Buttons */}
                         <div className="flex flex-col justify-center gap-4">
                             <button
-                                onClick={() => onPlayHand(selectedHoleCards, selectedJokers, selectedCards)}
+                                onClick={handlePlayHand}
                                 disabled={selectedJokers.length !== 3 || selectedCards.length !== 5}
                                 className={cn(
-                                    "px-8 py-6 text-xl font-bold rounded-lg transition-all",
+                                    "px-8 py-6 text-xl font-bold rounded-lg transition-all w-full",
                                     selectedJokers.length === 3 && selectedCards.length === 5
                                         ? "bg-blue-500 hover:bg-blue-600 text-white cursor-pointer shadow-lg hover:shadow-blue-500/20"
                                         : "bg-gray-700 text-gray-400 cursor-not-allowed"
@@ -334,7 +396,9 @@ export function PlayPhase({
                                     key={index}
                                     className={cn(
                                         "w-32 h-48 transition-all duration-300 ease-in-out transform",
-                                        isCardSelected(card) && "opacity-50 scale-95"
+                                        isCardSelected(card) && "opacity-50 scale-95",
+                                        hasDealtCards && "deal-hole-card",
+                                        `deal-delay-${index + 1}`
                                     )}
                                 >
                                     <CardDisplay 
@@ -351,7 +415,9 @@ export function PlayPhase({
                                     key={index}
                                     className={cn(
                                         "w-32 h-48 transition-all duration-300",
-                                        selectedJokers.includes(joker) && "opacity-50 scale-95"
+                                        selectedJokers.includes(joker) && "opacity-50 scale-95",
+                                        hasDealtCards && "deal-joker",
+                                        `deal-delay-${index + 3}` // Start after hole cards
                                     )}
                                 >
                                     <JokerDisplay 
@@ -368,32 +434,107 @@ export function PlayPhase({
 
             {/* Right Side Panel */}
             <div className="w-80 flex flex-col gap-6 p-6 bg-white/5 rounded-lg">
+                {/* Total Score */}
+                <div className="flex flex-col gap-2">
+                    <div className="text-lg font-medium text-gray-300">Total Score</div>
+                    <MotionSpan
+                        key={totalScore}
+                        initial={{ scale: 1 }}
+                        animate={scoring?.isAnimating ? { scale: [1, 1.2, 1] } : {}}
+                        style={{
+                            fontSize: "2.25rem",
+                            fontWeight: "bold",
+                            display: "block",
+                            color: totalScore >= SCORE_THRESHOLD ? "#4ade80" : "#f87171"
+                        }}
+                    >
+                        {totalScore}
+                    </MotionSpan>
+                    <div className="text-sm text-gray-400">
+                        Threshold: {SCORE_THRESHOLD}
+                    </div>
+                </div>
+
                 {/* Timer */}
                 <div className="flex flex-col gap-2">
                     <div className="text-lg font-medium text-gray-300">Time Remaining</div>
                     <div className="text-4xl font-bold text-blue-500">{timeRemaining}s</div>
                 </div>
 
-                {/* Current Score */}
-                <div className="flex flex-col gap-2">
-                    <div className="text-lg font-medium text-gray-300">Current Hand</div>
-                    {result ? (
-                        <>
-                            <div className="text-2xl font-bold text-yellow-400">
-                                {result.handRank.toString()}
-                            </div>
-                            <div className="text-xl font-bold text-green-400">
-                                {result.baseScore} Points
-                            </div>
-                        </>
-                    ) : (
-                        <div className="text-xl text-gray-400">
-                            Select 5 cards to make a hand
-                        </div>
-                    )}
-                </div>
+                {/* Current Hand Score */}
+                <AnimatePresence>
+                    {scoring && (
+                        <MotionDiv
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            variants={{
+                                initial: { opacity: 0, y: 20 },
+                                animate: { opacity: 1, y: 0 },
+                                exit: { opacity: 0 }
+                            }}
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "1rem",
+                                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                                borderRadius: "0.5rem",
+                                padding: "1rem"
+                            }}
+                        >
+                            <div className="text-lg font-medium text-gray-300">Current Hand</div>
+                            
+                            {/* Base Score */}
+                            <MotionDiv
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center"
+                                }}
+                            >
+                                <span className="text-white">Base Score</span>
+                                <MotionSpan
+                                    initial={{ scale: 0.8 }}
+                                    animate={{ scale: [1, 1.5, 1] }}
+                                    style={{
+                                        color: "#facc15"
+                                    }}
+                                >
+                                    +{scoring.baseScore}
+                                </MotionSpan>
+                            </MotionDiv>
 
-                {/* Player Stats or Additional Info could go here */}
+                            {/* Joker Bonuses */}
+                            {scoring.jokerBonuses.map(({ joker, bonus }, index) => (
+                                <MotionDiv
+                                    key={joker.id}
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.2 + index * 0.1 }}
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center"
+                                    }}
+                                >
+                                    <span className="text-white">{joker.name}</span>
+                                    <MotionSpan
+                                        initial={{ scale: 0.8 }}
+                                        animate={{ scale: [1, 1.5, 1] }}
+                                        transition={{ delay: 0.2 + index * 0.1 }}
+                                        style={{
+                                            color: bonus > 0 ? "#4ade80" : "#f87171"
+                                        }}
+                                    >
+                                        +{bonus}
+                                    </MotionSpan>
+                                </MotionDiv>
+                            ))}
+                        </MotionDiv>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     )

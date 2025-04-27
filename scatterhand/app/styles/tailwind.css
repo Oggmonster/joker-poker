@@ -260,3 +260,72 @@
 	transform: scale(0.8);
 	transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
 }
+
+/* Card dealing animations */
+@keyframes dealBoardCard {
+	0% {
+		opacity: 0;
+		transform: translateY(-200px) scale(0.5) rotateY(180deg);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1) rotateY(0);
+	}
+}
+
+@keyframes dealHoleCard {
+	0% {
+		opacity: 0;
+		transform: translateY(200px) scale(0.5) rotateY(180deg);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1) rotateY(0);
+	}
+}
+
+@keyframes dealJoker {
+	0% {
+		opacity: 0;
+		transform: translateX(200px) scale(0.5) rotate(-45deg);
+	}
+	100% {
+		opacity: 1;
+		transform: translateX(0) scale(1) rotate(0);
+	}
+}
+
+.deal-board-card {
+	animation: dealBoardCard 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+	backface-visibility: hidden;
+}
+
+.deal-hole-card {
+	animation: dealHoleCard 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+	backface-visibility: hidden;
+}
+
+.deal-joker {
+	animation: dealJoker 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* Stagger delays for dealing multiple cards */
+.deal-delay-1 {
+	animation-delay: 0.1s;
+}
+
+.deal-delay-2 {
+	animation-delay: 0.2s;
+}
+
+.deal-delay-3 {
+	animation-delay: 0.3s;
+}
+
+.deal-delay-4 {
+	animation-delay: 0.4s;
+}
+
+.deal-delay-5 {
+	animation-delay: 0.5s;
+}
