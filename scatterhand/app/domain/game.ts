@@ -108,7 +108,10 @@ export class Game {
             this.currentAnte += this.config.anteIncrease
         }
 
-        this.roundNumber++
+        
+
+        console.log('Starting round', this.roundNumber)
+        console.log('Current ante', this.currentAnte)
         
         // TODO: Create specific round instance based on type
         const config = this.createRoundConfig()
@@ -136,6 +139,7 @@ export class Game {
                 throw new Error('Invalid round type')
         }
 
+        console.log('Current round', this.currentRound)
         return this.currentRound
     }
 
@@ -171,6 +175,9 @@ export class Game {
         if (this.players.size === 1) {
             this.status = GameStatus.FINISHED
         }
+
+        this.roundNumber++
+        
         return result
     }
 

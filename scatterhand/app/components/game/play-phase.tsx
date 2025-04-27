@@ -1,25 +1,16 @@
 import { Card } from '#app/domain/cards'
 import { BaseJoker } from '#app/domain/joker'
-import { Player } from '#app/domain/player'
 import { cn } from '#app/utils/cn'
 import { useCallback, useState, useEffect } from 'react'
 import { CardDisplay } from './card-display'
 import { JokerDisplay } from './joker-display'
 import { HandEvaluator } from '#app/domain/scoring.ts'
 import { AnimatePresence, motion } from 'framer-motion'
-
-export enum Phase {
-    COUNTDOWN = 'COUNTDOWN',
-    FLOP = 'FLOP',
-    TURN = 'TURN',
-    RIVER = 'RIVER',
-    COMPLETE = 'COMPLETE'
-}
-
-const SCORE_THRESHOLD = 100 // Example threshold, adjust as needed
+import { Phase } from '#app/domain/rounds.ts'
 
 interface PlayPhaseProps {
-    player: Player
+    phase: Phase
+    scoreThreshold: number
     playerCards: Card[]
     playerJokers: BaseJoker[]
     communityCards: Card[]
@@ -70,7 +61,8 @@ const MotionSpan = motion.span
 const MotionDiv = motion.div
 
 export function PlayPhase({
-    player,
+    phase,
+    scoreThreshold,
     playerCards,
     playerJokers,
     communityCards,
@@ -175,7 +167,7 @@ export function PlayPhase({
             bonus: joker.calculateBonus({
                 holeCards: selectedHoleCards,
                 playedHand: selectedCards,
-                phase: Phase.FLOP
+                phase: phase
             })
         }))
 
@@ -451,13 +443,13 @@ export function PlayPhase({
                             fontSize: "2.25rem",
                             fontWeight: "bold",
                             display: "block",
-                            color: totalScore >= SCORE_THRESHOLD ? "#4ade80" : "#f87171"
+                            color: totalScore >= scoreThreshold ? "#4ade80" : "#f87171"
                         }}
                     >
                         {totalScore}
                     </MotionSpan>
                     <div className="text-sm text-gray-400">
-                        Threshold: {SCORE_THRESHOLD}
+                        Threshold: {scoreThreshold}
                     </div>
                 </div>
 

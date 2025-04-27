@@ -24,6 +24,15 @@ export interface RoundConfig {
     roundNumber: number    // Used to scale difficulty
 }
 
+export enum Phase {
+    COUNTDOWN = 'COUNTDOWN',
+    FLOP = 'FLOP',
+    TURN = 'TURN',
+    RIVER = 'RIVER',
+    COMPLETE = 'COMPLETE',
+    SHOWDOWN = 'SHOWDOWN'
+}
+
 /**
  * Base class for all round types
  */
@@ -68,5 +77,5 @@ export abstract class Round {
      * @param playerScores Map of player IDs to their scores
      * @returns RoundResult containing scores and rewards
      */
-    abstract processResults(playerScores: Map<string, number>): RoundResult
+    abstract processResults(playerScore: Map<string, number>): RoundResult
 } 
