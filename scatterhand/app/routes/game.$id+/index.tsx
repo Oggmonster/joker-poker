@@ -19,7 +19,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 export const meta: Route.MetaFunction = ({ data }) => [{ title: `Scatterhand - Game ${data.gameId}` }]
 
 const ROUND_TIME = 300 // 5 minutes
-const COUNTDOWN_TIME = 5 // 5 seconds
+const COUNTDOWN_TIME = 3 // 3 seconds
 
 interface GameState {
     phase: Phase,

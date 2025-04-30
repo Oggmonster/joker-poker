@@ -126,13 +126,6 @@ export function PlayPhase({
         return selectedCards.some(c => c.id === card.id)
     }
 
-    // Helper function to get card source indicator
-    const getCardSourceClass = (card: Card) => {
-        if (playerCards.some(c => c.id === card.id)) {
-            return 'from-hole-cards'
-        }
-        return 'from-board-cards'
-    }
 
     const handlePlayHand = useCallback(() => {
         if (selectedCards.length !== 5 || selectedJokers.length !== 3) return
@@ -227,10 +220,7 @@ export function PlayPhase({
                                 {selectedCards.map((card, index) => (
                                     <div 
                                         key={`selected-${card.id}`}
-                                        className={cn(
-                                            "w-32 h-48 transition-all duration-300 ease-in-out transform hover:scale-105",
-                                            getCardSourceClass(card)
-                                        )}
+                                        className={"w-32 h-48 transition-all duration-300 ease-in-out transform hover:scale-105"}
                                         style={{
                                             transform: `rotate(${(index - (selectedCards.length - 1) / 2) * 5}deg)`
                                         }}
