@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card, Rank } from '../cards'
-import { Phase } from '../round-state'
+import { Phase } from '../rounds'
 
 /**
  * A joker that gives bonus points for having Ace-Queen
@@ -24,21 +24,9 @@ export class BigChick extends BaseJoker {
         playedHand?: readonly Card[]
         phase?: Phase
     }): number {
-        // Check if we have exactly two hole cards
-        if (holeCards.length !== 2) return 0
-
-        // Get the two cards
-        const card1 = holeCards[0]
-        const card2 = holeCards[1]
-        if (!card1 || !card2) return 0
-
-        // Check if we have Ace-Queen
-        const hasAceQueen = (
-            (card1.rank === Rank.ACE && card2.rank === Rank.QUEEN) ||
-            (card1.rank === Rank.QUEEN && card2.rank === Rank.ACE)
-        )
-
-        if (!hasAceQueen) return 0
+        const hasAce = holeCards.some(card => card.rank === Rank.ACE)
+        const hasQueen = holeCards.some(card => card.rank === Rank.QUEEN)
+        if (!hasAce || !hasQueen) return 0
 
         const bonus = BigChick.BASE_BONUS + 
             (BigChick.LEVEL_BONUS * (this.level - 1))

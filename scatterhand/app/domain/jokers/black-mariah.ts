@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Rank, Suit } from '../cards';
-import { Phase } from '../round-state';
+import { Phase } from '../rounds';
 
 /**
  * A joker that gives bonus points when Queen of Spades appears

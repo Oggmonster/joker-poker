@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card } from '../cards'
-import { Phase } from '../round-state'
+import { Phase } from '../rounds'
 import { HandEvaluator, HandRank } from '../scoring'
 
 /**
@@ -21,11 +21,19 @@ export class SetMine extends BaseJoker {
     }
 
     private hasPocketPair(cards: readonly Card[]): boolean {
-        if (cards.length !== 2) return false
-        const card1 = cards[0]
-        const card2 = cards[1]
-        if (!card1 || !card2) return false
-        return card1.rank === card2.rank
+        const sortedCards = [...cards].sort((a, b) => a.toNumber() - b.toNumber())
+
+        for (let i = 0; i < sortedCards.length - 1; i++) {
+            for (let j = i + 1; j < sortedCards.length; j++) {
+                const card1 = sortedCards[i]
+                const card2 = sortedCards[j]
+                if (!card1 || !card2) continue
+
+                if (card1.rank === card2.rank) return true
+            }
+        }
+
+        return false
     }
 
     public calculateBonus({ holeCards, playedHand }: {

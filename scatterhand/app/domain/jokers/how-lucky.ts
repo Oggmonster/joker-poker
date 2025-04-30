@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card, Rank } from '../cards'
-import { Phase } from '../round-state'
+import { Phase } from '../rounds'
 
 /**
  * A unique joker that gives bonus points for each 7 in your playing hand

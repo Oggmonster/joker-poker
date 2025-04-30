@@ -1,19 +1,19 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card, Rank } from '../cards'
-import { Phase } from '../round-state'
+import { Phase } from '../rounds'
 
 /**
  * A unique joker that gives bonus points for holding two cards below 10
  */
 export class TheDealer extends BaseJoker {
-    private static readonly BASE_BONUS = 100
-    private static readonly LEVEL_BONUS = 100
+    private static readonly BASE_BONUS = 20
+    private static readonly LEVEL_BONUS = 10
 
     constructor() {
         super(
             'the-dealer',
             'The Dealer',
-            `${TheDealer.BASE_BONUS} points if you hold two cards below 10`,
+            `${TheDealer.BASE_BONUS} points if you hold exactly two cards below 10`,
             JokerRarity.UNIQUE,
             JokerType.PLAYER
         )
@@ -25,8 +25,8 @@ export class TheDealer extends BaseJoker {
     }
 
     private hasTwoCardsBelowTen(cards: readonly Card[]): boolean {
-        if (cards.length !== 2) return false
-        return cards.every(card => card && this.isCardBelowTen(card))
+        const cardsBelowTenCount = cards.filter(card => card && this.isCardBelowTen(card)).length
+        return cardsBelowTenCount === 2
     }
 
     public calculateBonus({ holeCards }: {

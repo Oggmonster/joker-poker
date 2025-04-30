@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Rank } from '../cards';
-import { Phase } from '../round-state';
+import { Phase } from '../rounds';
 
 /**
  * A joker that gives bonus points for pocket Kings
@@ -24,15 +24,8 @@ export class Cowboys extends BaseJoker {
         playedHand?: readonly Card[];
         phase?: Phase;
     }): number {
-        // Only check hole cards for pocket pairs
-        if (holeCards.length !== 2) return 0;
-
-        const [card1, card2] = holeCards;
-        if (!card1 || !card2) return 0;
-
-        // Check if both cards are Kings
-        const hasKings = card1.rank === Rank.KING && card2.rank === Rank.KING;
-        if (!hasKings) return 0;
+        const kingsCount = holeCards.filter(card => card.rank === Rank.KING).length
+        if (kingsCount < 2) return 0
 
         const bonus = Cowboys.BASE_BONUS + 
             (Cowboys.LEVEL_BONUS * (this.level - 1));

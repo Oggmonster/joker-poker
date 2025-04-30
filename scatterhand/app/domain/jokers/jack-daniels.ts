@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Rank } from '../cards';
-import { Phase } from '../round-state';
+import { Phase } from '../rounds';
 
 /**
  * A joker that gives bonus points for having Jack-Ten
@@ -13,7 +13,7 @@ export class JackDaniels extends BaseJoker {
         super(
             'jack-daniels',
             'Jack Daniels',
-            `${JackDaniels.BASE_BONUS} points for having Jack-Ten (JT)`,
+            `${JackDaniels.BASE_BONUS} points for holding Jack-Ten (JT)`,
             JokerRarity.COMMON,
             JokerType.PLAYER
         );
@@ -24,19 +24,9 @@ export class JackDaniels extends BaseJoker {
         playedHand?: readonly Card[];
         phase?: Phase;
     }): number {
-        // Only check hole cards
-        if (holeCards.length !== 2) return 0;
-
-        const [card1, card2] = holeCards;
-        if (!card1 || !card2) return 0;
-
-        // Check if cards are Jack and Ten in any order
-        const hasJackTen = (
-            (card1.rank === Rank.JACK && card2.rank === Rank.TEN) ||
-            (card1.rank === Rank.TEN && card2.rank === Rank.JACK)
-        );
-        
-        if (!hasJackTen) return 0;
+        const hasJack = holeCards.some(card => card.rank === Rank.JACK)
+        const hasTen = holeCards.some(card => card.rank === Rank.TEN)
+        if (!hasJack || !hasTen) return 0
 
         const bonus = JackDaniels.BASE_BONUS + 
             (JackDaniels.LEVEL_BONUS * (this.level - 1));

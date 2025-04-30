@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card, Rank } from '../cards'
-import { Phase } from '../round-state'
+import { Phase } from '../rounds'
 
 /**
  * A joker that gives bonus points for having pocket 9s (99)
@@ -24,16 +24,8 @@ export class ThePistol extends BaseJoker {
         playedHand?: readonly Card[]
         phase: Phase
     }): number {
-        // Check if we have exactly two hole cards
-        if (holeCards.length !== 2) return 0
-
-        // Get the two cards
-        const card1 = holeCards[0]
-        const card2 = holeCards[1]
-        if (!card1 || !card2) return 0
-
-        // Check if both cards are 9s
-        if (card1.rank !== Rank.NINE || card2.rank !== Rank.NINE) return 0
+       const nineCount = holeCards.filter(card => card.rank === Rank.NINE).length
+       if (nineCount < 2) return 0
 
         const bonus = ThePistol.BASE_BONUS + 
             (ThePistol.LEVEL_BONUS * (this.level - 1))

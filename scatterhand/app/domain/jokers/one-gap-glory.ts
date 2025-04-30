@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card, Rank } from '../cards'
-import { Phase } from '../round-state'
+import { Phase } from '../rounds'
 
 /**
  * A joker that gives bonus points for holding a one-gap suited connector (e.g., 9-7 suited)
@@ -37,22 +37,30 @@ export class OneGapGlory extends BaseJoker {
     }
 
     private isOneGapConnector(cards: readonly Card[]): boolean {
-        if (cards.length !== 2) return false
+        // Need at least 2 cards to check for one-gap connectors
+        if (cards.length < 2) return false
 
-        const card1 = cards[0]
-        const card2 = cards[1]
-        if (!card1 || !card2) return false
+        // Check all pairs of cards
+        for (let i = 0; i < cards.length - 1; i++) {
+            for (let j = i + 1; j < cards.length; j++) {
+                const card1 = cards[i]
+                const card2 = cards[j]
+                if (!card1 || !card2) continue
 
-        // Must be same suit
-        if (card1.suit !== card2.suit) return false
+                // Must be same suit
+                if (card1.suit !== card2.suit) continue
 
-        // Get rank values
-        const value1 = OneGapGlory.RANK_VALUES[card1.rank]
-        const value2 = OneGapGlory.RANK_VALUES[card2.rank]
+                // Get rank values
+                const value1 = OneGapGlory.RANK_VALUES[card1.rank]
+                const value2 = OneGapGlory.RANK_VALUES[card2.rank]
 
-        // Check if there's exactly one gap between the ranks
-        const diff = Math.abs(value1 - value2)
-        return diff === 2
+                // Check if there's exactly one gap between the ranks
+                const diff = Math.abs(value1 - value2)
+                if (diff === 2) return true
+            }
+        }
+
+        return false
     }
 
     public calculateBonus({ holeCards }: {

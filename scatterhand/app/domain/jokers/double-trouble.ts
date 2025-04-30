@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card } from '../cards'
-import { Phase } from '../round-state'
+import { Phase } from '../rounds'
 import { HandEvaluator, HandRank } from '../scoring'
 
 /**
@@ -14,7 +14,7 @@ export class DoubleTrouble extends BaseJoker {
         super(
             'double-trouble',
             'Double Trouble',
-            `${DoubleTrouble.BASE_BONUS} points if you make two pairs using both hole cards`,
+            `${DoubleTrouble.BASE_BONUS} points if you make two pairs using any of your hole cards`,
             JokerRarity.RARE,
             JokerType.PLAYER
         )
@@ -31,8 +31,9 @@ export class DoubleTrouble extends BaseJoker {
         const result = HandEvaluator.evaluate([...playedHand])
         if (result.handRank !== HandRank.TWO_PAIR) return 0
 
-        // Check if both hole cards were used
-        if (holeCards.some(card => !playedHand.includes(card))) return 0
+        //check if played hand contains any of the hole cards
+        const containsHoleCard = playedHand.some(card => holeCards.includes(card))
+        if (!containsHoleCard) return 0
 
         const bonus = DoubleTrouble.BASE_BONUS + 
             (DoubleTrouble.LEVEL_BONUS * (this.level - 1))

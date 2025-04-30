@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Rank } from '../cards';
-import { Phase } from '../round-state';
+import { Phase } from '../rounds';
 
 /**
  * A joker that gives bonus points for pocket nines (9-9)
@@ -24,15 +24,8 @@ export class Lollipops extends BaseJoker {
         playedHand?: readonly Card[];
         phase?: Phase;
     }): number {
-        // Only check hole cards for pocket pairs
-        if (holeCards.length !== 2) return 0;
-
-        const [card1, card2] = holeCards;
-        if (!card1 || !card2) return 0;
-
-        // Check if both cards are nines
-        const hasNines = card1.rank === Rank.NINE && card2.rank === Rank.NINE;
-        if (!hasNines) return 0;
+        const ninesCount = holeCards.filter(card => card.rank === Rank.NINE).length
+        if (ninesCount < 2) return 0
 
         const bonus = Lollipops.BASE_BONUS + 
             (Lollipops.LEVEL_BONUS * (this.level - 1));

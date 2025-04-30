@@ -1,15 +1,15 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Suit } from '../cards';
-import { Phase } from '../round-state';
+import { Phase } from '../rounds';
 
 export class DiamondDazzle extends BaseJoker {
-    private static readonly POINTS_PER_DIAMOND = 2;
+    private static readonly POINTS_PER_DIAMOND = 4;
 
     constructor() {
         super(
             'diamond-dazzle',
             'Diamond Dazzle',
-            `+${DiamondDazzle.POINTS_PER_DIAMOND} points for each Diamond card in your hand`,
+            `+${DiamondDazzle.POINTS_PER_DIAMOND} points for each Diamond card`,
             JokerRarity.COMMON,
             JokerType.PLAYER
         );

@@ -1,9 +1,9 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker';
-import { Phase } from '../round-state';
+import { Phase } from '../rounds';
 import { Card, Rank } from '../cards';
 
 /**
- * A joker that gives bonus points for Ace-King (suited or not)
+ * A joker that gives bonus points for Ace-King in your hole cards
  */
 export class BigSlick extends BaseJoker {
     private static readonly BASE_BONUS = 5;
@@ -13,7 +13,7 @@ export class BigSlick extends BaseJoker {
         super(
             'big-slick',
             'Big Slick',
-            `${BigSlick.BASE_BONUS} points for Ace-King (suited or not)`,
+            `${BigSlick.BASE_BONUS} points if holding Ace-King`,
             JokerRarity.COMMON,
             JokerType.PLAYER
         );
@@ -24,19 +24,10 @@ export class BigSlick extends BaseJoker {
         playedHand?: readonly Card[];
         phase?: Phase;
     }): number {
-        // Only check hole cards
-        if (holeCards.length !== 2) return 0;
+        const hasAce = holeCards.some(card => card.rank === Rank.ACE)
+        const hasKing = holeCards.some(card => card.rank === Rank.KING)
+        if (!hasAce || !hasKing) return 0
 
-        const [card1, card2] = holeCards;
-        if (!card1 || !card2) return 0;
-
-        // Check if cards are Ace and King in any order
-        const hasAceKing = (
-            (card1.rank === Rank.ACE && card2.rank === Rank.KING) ||
-            (card1.rank === Rank.KING && card2.rank === Rank.ACE)
-        );
-        
-        if (!hasAceKing) return 0;
 
         const bonus = BigSlick.BASE_BONUS + 
             (BigSlick.LEVEL_BONUS * (this.level - 1));

@@ -72,12 +72,10 @@ export function PlayPhase({
     className
 }: PlayPhaseProps) {
     const [selectedJokers, setSelectedJokers] = useState<BaseJoker[]>([])
-    const [selectedBoardCards, setSelectedBoardCards] = useState<Card[]>([])
-    const [selectedHoleCards, setSelectedHoleCards] = useState<Card[]>([])
+    const [selectedCards, setSelectedCards] = useState<Card[]>([])
     const [hasDealtCards, setHasDealtCards] = useState(false)
     const [totalScore, setTotalScore] = useState(0)
     const [scoring, setScoring] = useState<ScoringState | null>(null)
-    const selectedCards = [...selectedBoardCards, ...selectedHoleCards]
 
     // Add effect to trigger dealing animation
     useEffect(() => {
@@ -96,40 +94,18 @@ export function PlayPhase({
         return result.handRank
     }
 
-    // Handle card selection
-    const handleBoardCardSelect = useCallback((card: Card) => {
-        setSelectedBoardCards(prev => {
-            const isSelected = prev.some(c => c.id === card.id)
-            if (isSelected) {
-                return prev.filter(c => c.id !== card.id)
-            }
-            if (prev.length < 3) {
-                return [...prev, card]
-            }
-            return prev
-        })
-    }, [])
-
-    const handleHoleCardSelect = useCallback((card: Card) => {
-        setSelectedHoleCards(prev => {
-            const isSelected = prev.some(c => c.id === card.id)
-            if (isSelected) {
-                return prev.filter(c => c.id !== card.id)
-            }
-            if (prev.length < 2) {
-                return [...prev, card]
-            }
-            return prev
-        })
-    }, [])
-
     const handleCardSelect = useCallback((card: Card) => {
-        if (playerCards.some(c => c.id === card.id)) {
-            handleHoleCardSelect(card)
-        } else {
-            handleBoardCardSelect(card)
-        }
-    }, [handleHoleCardSelect, handleBoardCardSelect])
+        setSelectedCards(prev => {
+            const isSelected = prev.some(c => c.id === card.id)
+            if (isSelected) {
+                return prev.filter(c => c.id !== card.id)
+            }
+            if (prev.length < 5) {
+                return [...prev, card]
+            }
+            return prev
+        })
+    }, [])
     
     // Handle joker selection
     const handleJokerSelect = useCallback((joker: BaseJoker) => {
@@ -165,7 +141,7 @@ export function PlayPhase({
         const jokerBonuses = selectedJokers.map(joker => ({
             joker,
             bonus: joker.calculateBonus({
-                holeCards: selectedHoleCards,
+                holeCards: playerCards,
                 playedHand: selectedCards,
                 phase: phase
             })
@@ -186,7 +162,7 @@ export function PlayPhase({
             setScoring(prev => prev ? { ...prev, isAnimating: false } : null)
             onPlayHand(newTotalScore)
         }, 1000) // Adjust timing based on animations
-    }, [selectedCards, selectedJokers, selectedHoleCards, onPlayHand])
+    }, [selectedCards, selectedJokers, onPlayHand])
 
     const result = getResult()
     
@@ -212,7 +188,7 @@ export function PlayPhase({
                                     <CardDisplay 
                                         card={card}
                                         isSelected={isCardSelected(card)}
-                                        onClick={() => handleBoardCardSelect(card)}
+                                        onClick={() => handleCardSelect(card)}
                                     />
                                 </div>
                             ))}
@@ -329,8 +305,7 @@ export function PlayPhase({
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => {
-                                        setSelectedBoardCards([])
-                                        setSelectedHoleCards([])
+                                        setSelectedCards([])
                                     }}
                                     disabled={selectedCards.length === 0}
                                     className={cn(
@@ -360,17 +335,10 @@ export function PlayPhase({
                             <div className="flex gap-4 text-sm font-medium">
                                 <div className={cn(
                                     "flex items-center gap-1",
-                                    selectedBoardCards.length === 3 ? "text-green-400" : "text-gray-400"
+                                    selectedCards.length === 5 ? "text-green-400" : "text-gray-400"
                                 )}>
-                                    <span>{selectedBoardCards.length}/3</span>
+                                    <span>{selectedCards.length}/5</span>
                                     <span>Board</span>
-                                </div>
-                                <div className={cn(
-                                    "flex items-center gap-1",
-                                    selectedHoleCards.length === 2 ? "text-green-400" : "text-gray-400"
-                                )}>
-                                    <span>{selectedHoleCards.length}/2</span>
-                                    <span>Hole</span>
                                 </div>
                                 <div className={cn(
                                     "flex items-center gap-1",
@@ -402,7 +370,7 @@ export function PlayPhase({
                                     <CardDisplay 
                                         card={card}
                                         isSelected={isCardSelected(card)}
-                                        onClick={() => handleHoleCardSelect(card)}
+                                        onClick={() => handleCardSelect(card)}
                                     />
                                 </div>
                             ))}

@@ -105,6 +105,20 @@ describe('HandEvaluator', () => {
     expect(result.kickers).toHaveLength(0)
   })
 
+  test('identifies false straight', () => {
+    const cards = [
+      new Card(Suit.HEARTS, Rank.JACK),
+      new Card(Suit.DIAMONDS, Rank.TEN),
+      new Card(Suit.CLUBS, Rank.JACK),
+      new Card(Suit.SPADES, Rank.EIGHT),
+      new Card(Suit.HEARTS, Rank.SEVEN),
+
+    ]
+    const result = HandEvaluator.evaluate(cards)
+    expect(result.handRank).not.toBe(HandRank.STRAIGHT)
+    expect(result.handRank).toBe(HandRank.PAIR)
+  })
+
   test('identifies overlapping straight as high card', () => {
     const cards = [
       new Card(Suit.CLUBS, Rank.JACK),

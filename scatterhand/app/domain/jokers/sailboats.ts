@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card, Rank } from '../cards'
-import { Phase } from '../round-state'
+import { Phase } from '../rounds'
 
 /**
  * A joker that gives bonus points for having pocket 4s (44)
@@ -24,16 +24,8 @@ export class Sailboats extends BaseJoker {
         playedHand?: readonly Card[]
         phase: Phase
     }): number {
-        // Check if we have exactly two hole cards
-        if (holeCards.length !== 2) return 0
-
-        // Get the two cards
-        const card1 = holeCards[0]
-        const card2 = holeCards[1]
-        if (!card1 || !card2) return 0
-
-        // Check if both cards are 4s
-        if (card1.rank !== Rank.FOUR || card2.rank !== Rank.FOUR) return 0
+        const foursCount = holeCards.filter(card => card.rank === Rank.FOUR).length
+        if (foursCount < 2) return 0
 
         const bonus = Sailboats.BASE_BONUS + 
             (Sailboats.LEVEL_BONUS * (this.level - 1))

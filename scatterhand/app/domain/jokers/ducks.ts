@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Rank } from '../cards';
-import { Phase } from '../round-state';
+import { Phase } from '../rounds';
 
 
 /**
@@ -25,15 +25,8 @@ export class Ducks extends BaseJoker {
         playedHand?: readonly Card[];
         phase?: Phase;
     }): number {
-        // Only check hole cards for pocket pairs
-        if (holeCards.length !== 2) return 0;
-
-        const [card1, card2] = holeCards;
-        if (!card1 || !card2) return 0;
-
-        // Check if both cards are deuces
-        const hasDeuces = card1.rank === Rank.TWO && card2.rank === Rank.TWO;
-        if (!hasDeuces) return 0;
+        const deucesCount = holeCards.filter(card => card.rank === Rank.TWO).length
+        if (deucesCount < 2) return 0
 
         const bonus = Ducks.BASE_BONUS + 
             (Ducks.LEVEL_BONUS * (this.level - 1));

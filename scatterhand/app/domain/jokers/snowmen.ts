@@ -1,6 +1,5 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Rank } from '../cards';
-import { Phase } from '../rounds';
 
 /**
  * A joker that gives bonus points for pocket eights (8-8)
@@ -19,24 +18,11 @@ export class Snowmen extends BaseJoker {
         );
     }
 
-    calculateBonus({ holeCards, phase }: { holeCards: Card[], phase: Phase }): number {
-        if (phase !== Phase.FLOP || !holeCards || holeCards.length !== 2) {
-            return 0;
-        }
+    calculateBonus({ holeCards }: { holeCards: Card[] }): number {
+        const eightsCount = holeCards.filter(card => card.rank === Rank.EIGHT).length
+        if (eightsCount < 2) return 0
 
-        // Since we checked length === 2 above, we know these exist
-        const card1 = holeCards[0];
-        const card2 = holeCards[1];
-        
-        if (!card1 || !card2) {
-            return 0;
-        }
-        
-        if (card1.rank === Rank.EIGHT && card2.rank === Rank.EIGHT) {
-            return this.baseBonus + (this.level - 1) * this.levelBonus;
-        }
-
-        return 0;
+        return this.baseBonus + (this.level - 1) * this.levelBonus;
     }
 
     getDescription(): string {

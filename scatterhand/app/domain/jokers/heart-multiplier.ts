@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card, Suit } from '../cards'
-import { Phase } from '../round-state'
+import { Phase } from '../rounds'
 
 /**
  * A joker that multiplies points based on the number of hearts
@@ -30,7 +30,7 @@ export class HeartMultiplier extends BaseJoker {
     }): number {
         if (!playedHand) return 0;
         
-        const heartCount = this.countHearts([...playedHand]);
+        const heartCount = this.countHearts([...playedHand, ...holeCards]);
         if (heartCount === 0) return 0;
 
         const multiplier = HeartMultiplier.BASE_MULTIPLIER + 

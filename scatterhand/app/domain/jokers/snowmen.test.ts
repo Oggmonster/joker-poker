@@ -2,7 +2,7 @@ import { expect, test, describe, beforeEach } from 'vitest'
 import { Snowmen } from './snowmen'
 import { Card, Rank, Suit } from '../cards'
 import { JokerRarity, JokerType } from '../joker'
-import { Phase } from '../round-state'
+import { Phase } from '../rounds'
 
 describe('Snowmen', () => {
     let snowmen: Snowmen

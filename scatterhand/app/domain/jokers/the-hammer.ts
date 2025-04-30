@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker';
 import { Card, Rank } from '../cards';
-import { Phase } from '../round-state';
+import { Phase } from '../rounds';
 
 /**
  * A joker that gives bonus points for having 7-2 offsuit
@@ -13,7 +13,7 @@ export class TheHammer extends BaseJoker {
         super(
             'the-hammer',
             'The Hammer',
-            `${TheHammer.BASE_BONUS} points for having 7-2 offsuit`,
+            `${TheHammer.BASE_BONUS} points for holding 7-2`,
             JokerRarity.COMMON,
             JokerType.PLAYER
         );
@@ -24,22 +24,9 @@ export class TheHammer extends BaseJoker {
         playedHand?: readonly Card[];
         phase: Phase;
     }): number {
-        // Only check hole cards
-        if (holeCards.length !== 2) return 0;
-
-        const [card1, card2] = holeCards;
-        if (!card1 || !card2) return 0;
-
-        // Check if cards are 7 and 2 in any order
-        const has72 = (
-            (card1.rank === Rank.SEVEN && card2.rank === Rank.TWO) ||
-            (card1.rank === Rank.TWO && card2.rank === Rank.SEVEN)
-        );
-        
-        // Must be offsuit
-        const isOffsuit = card1.suit !== card2.suit;
-        
-        if (!has72 || !isOffsuit) return 0;
+        const has7 = holeCards.some(card => card.rank === Rank.SEVEN)
+        const has2 = holeCards.some(card => card.rank === Rank.TWO)
+        if (!has7 || !has2) return 0
 
         const bonus = TheHammer.BASE_BONUS + 
             (TheHammer.LEVEL_BONUS * (this.level - 1));

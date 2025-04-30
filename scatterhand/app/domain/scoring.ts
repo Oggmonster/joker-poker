@@ -219,6 +219,10 @@ export class HandEvaluator {
 
 
   private static isStraight(cards: Card[]): boolean {
+    //ensure all cards are unique
+    const uniqueRanks = new Set(cards.map(card => card.rank));
+    if (uniqueRanks.size !== cards.length) return false;
+
     const distance = cards.reduce((acc, card, index) => {
       if (index === 0) return 0;
       

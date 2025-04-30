@@ -1,6 +1,6 @@
 import { BaseJoker, JokerRarity, JokerType } from '../joker'
 import { Card, Rank } from '../cards'
-import { Phase } from '../round-state'
+import { Phase } from '../rounds'
 
 /**
  * A joker that gives bonus points for having pocket Aces (AA)
@@ -24,16 +24,8 @@ export class TheRocket extends BaseJoker {
         playedHand?: readonly Card[]
         phase: Phase
     }): number {
-        // Check if we have exactly two hole cards
-        if (holeCards.length !== 2) return 0
-
-        // Get the two cards
-        const card1 = holeCards[0]
-        const card2 = holeCards[1]
-        if (!card1 || !card2) return 0
-
-        // Check if both cards are Aces
-        if (card1.rank !== Rank.ACE || card2.rank !== Rank.ACE) return 0
+        const acesCount = holeCards.filter(card => card.rank === Rank.ACE).length
+        if (acesCount < 2) return 0
 
         const bonus = TheRocket.BASE_BONUS + 
             (TheRocket.LEVEL_BONUS * (this.level - 1))
