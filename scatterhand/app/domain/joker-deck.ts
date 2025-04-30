@@ -44,7 +44,7 @@ import { Broadway } from './jokers/broadway'
 import { BlackMariah } from './jokers/black-mariah'
 import { BigChick } from './jokers/big-chick'
 import { AceInTheHole } from './jokers/ace-in-the-hole'
-import { DualThreat, EdgeFlush, FlushLane, MiddleMadness, PairedUp, SuitedSpeed } from './jokers/uncommon-community-jokers'
+import { DualThreat, FlushLane, MiddleMadness, PairedUp } from './jokers/uncommon-community-jokers'
 
 /**
  * Manages a collection of jokers and handles their distribution
@@ -127,8 +127,6 @@ export class JokerDeck {
         deck.addCommunityJoker(new DualThreat())
         deck.addCommunityJoker(new PairedUp())
         deck.addCommunityJoker(new MiddleMadness())
-        deck.addCommunityJoker(new SuitedSpeed())
-        deck.addCommunityJoker(new EdgeFlush())
         
         return deck
     }
@@ -170,7 +168,7 @@ export class JokerDeck {
     public drawCommunityJoker(): BaseJoker | undefined {
         if (this.communityJokers.length === 0) return undefined
         const index = Math.floor(Math.random() * this.communityJokers.length)
-        return this.communityJokers.splice(index, 1)[0]
+        return this.communityJokers.slice(index, 1)[0]
     }
 
     public drawPlayerJokers(count: number): BaseJoker[] {
@@ -190,14 +188,9 @@ export class JokerDeck {
      * @returns Array of drawn jokers
      */
     public drawCommunityJokers(count: number): BaseJoker[] {
-        const jokers: BaseJoker[] = []
-        for (let i = 0; i < count; i++) {
-            const joker = this.drawCommunityJoker()
-            if (joker) {
-                jokers.push(joker)
-            }
-        }
-        return jokers
+        const howMany = Math.min(count, this.communityJokers.length)
+        const randomJokers = [...this.communityJokers].sort(() => Math.random() - 0.5)
+        return randomJokers.slice(0, howMany)
     }
 
     /**

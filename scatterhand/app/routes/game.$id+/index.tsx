@@ -225,7 +225,7 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
     const resetAndStartNewRound = useCallback(() => {
         setPlayerTotalScore(0)
         setCountdownTimeRemaining(COUNTDOWN_TIME)
-        setTimeRemaining(ROUND_TIME)
+        setTimeRemaining(ROUND_TIME)       
         setGameState({
             phase: Phase.COUNTDOWN,
             playerCards: [],
