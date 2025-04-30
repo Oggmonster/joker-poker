@@ -19,18 +19,10 @@ export class SmallBlindRound extends Round {
             if (score >= this.getRewardThreshold()) {
                 // Basic reward for beating threshold
                 const playerRewards: Reward[] = [{
-                    type: 'COINS',
-                    value: Math.floor(score / 100) * 10 // 10 coins per 100 points
+                     type: 'JOKER',
+                    value: 'random'
                 }]
-
-                // Additional joker reward for exceptional scores (2x threshold)
-                if (score >= this.getRewardThreshold() * 2) {
-                    playerRewards.push({
-                        type: 'JOKER',
-                        value: 'random' // This will be resolved by the game manager
-                    })
-                }
-
+                
                 rewards.set(playerId, playerRewards)
             }
         }

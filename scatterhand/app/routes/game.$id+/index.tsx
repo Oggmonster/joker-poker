@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Card } from '#app/domain/cards'
 import { BaseJoker} from '#app/domain/joker'
 import { Player} from '#app/domain/player'
@@ -35,14 +35,16 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
     const [timeRemaining, setTimeRemaining] = useState(ROUND_TIME)
     const [countdownTimeRemaining, setCountdownTimeRemaining] = useState(COUNTDOWN_TIME)
 
-    const [cardDeck, setCardDeck] = useState<Deck | null>(null)
-    const [jokerDeck, setJokerDeck] = useState<JokerDeck | null>(null)
     const [game, setGame] = useState<Game | null>(null)
     const [round, setRound] = useState<Round | null>(null)
-    const [playerJokers, setPlayerJokers] = useState<BaseJoker[]>([])
     const [gameState, setGameState] = useState<GameState | null>(null)
     const [playerTotalScore, setPlayerTotalScore] = useState<number>(0)
     const [roundRewards, setRoundRewards] = useState<Reward[]>([])
+
+    //useRef to store the playerJokers
+    const playerJokersRef = useRef<BaseJoker[]>([])
+    const cardDeckRef = useRef<Deck | null>(null)
+    const jokerDeckRef = useRef<JokerDeck | null>(null)
 
     // Initialize game state
     useEffect(() => {
@@ -50,8 +52,8 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
             minPlayers: 2,
             maxPlayers: 6,
             startingAnte: 100,
-            anteIncrease: 100,
-            rewardThresholdMultiplier: 1.5
+            anteIncrease: 10,
+            rewardThresholdMultiplier: 1.1
         })
         newGame.addPlayer(new Player('1', 'Player 1', false))
         newGame.addPlayer(new Player('2', 'Bot 1', true))
@@ -62,11 +64,11 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
         newDeck.shuffle()
         const newJokerDeck = JokerDeck.create()
         newJokerDeck.shuffle()
-        //player start with 5 jokers
-        const newPlayerJokers = newJokerDeck.drawPlayerJokers(5)
-        setPlayerJokers(newPlayerJokers)
-        setCardDeck(newDeck)
-        setJokerDeck(newJokerDeck)
+        //player start with 1 jokers
+        const newPlayerJokers = newJokerDeck.drawPlayerJokers(1)
+        playerJokersRef.current = newPlayerJokers
+        cardDeckRef.current = newDeck
+        jokerDeckRef.current = newJokerDeck
         setGame(newGame)
         setGameState({
             phase: Phase.COUNTDOWN,
@@ -132,16 +134,20 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
         handleRoundStart()
     }, [game, round])
 
-    const drawRoundJokers = useCallback((count: number) => {
-        if (!gameState) return []
-        const availableJokers = [...playerJokers]
-        //shuffle availableJokers
-        availableJokers.sort(() => Math.random() - 0.5);
-        //draw from available jokers but filter out gameState.playerJokers
-        const drawnJokers = availableJokers.filter(joker => !gameState.playerJokers.includes(joker))
-        //take count from drawnJokers
-        return drawnJokers.slice(0, count)       
-    }, [playerJokers, gameState])
+    const drawRoundPlayerJokers = (currentJokers: BaseJoker[]): BaseJoker[] => {
+        const pickedJokers = currentJokers ? currentJokers : []
+        console.log('pickedJokers', pickedJokers)        
+        //draw from allJokers but filter out playerJokers
+        const drawnJokers = playerJokersRef.current.filter(joker => !pickedJokers.includes(joker))
+        if (drawnJokers.length === 0) return []
+        //shuffle drawnJokers
+        console.log('drawnJokers before shuffle', JSON.stringify(drawnJokers))
+        drawnJokers.sort(() => Math.random() - 0.5);
+        console.log('drawnJokers after shuffle', JSON.stringify(drawnJokers))
+        const pickedJoker = drawnJokers.slice(0, 1)
+        console.log('pickedJoker', JSON.stringify(pickedJoker))
+        return pickedJoker
+    }
 
       // Handle phase end
       const handlePhaseEnd = useCallback(() => {
@@ -151,11 +157,10 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
             if (!prev) return null
 
             if (prev.phase === Phase.COUNTDOWN) {
-                const flopCards = cardDeck?.drawCards(3) ?? []
-                const flopJokers = jokerDeck?.drawCommunityJokers(3) ?? []
-                const playerFlopCards = cardDeck?.drawCards(2) ?? []
-                const playerFlopJokers = drawRoundJokers(2)
-                console.log(playerFlopJokers)
+                const flopCards = cardDeckRef.current?.drawCards(3) ?? []
+                const flopJokers = jokerDeckRef.current?.drawCommunityJokers(3) ?? []
+                const playerFlopCards = cardDeckRef.current?.drawCards(2) ?? []
+                const playerFlopJokers = drawRoundPlayerJokers([])
                 
                 return {
                     ...prev,
@@ -167,31 +172,31 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
                 }
             }
             else if (prev.phase === Phase.FLOP) {
-                const turnCard = cardDeck?.drawCards(1)[0]
-                const turnJoker = jokerDeck?.drawCommunityJokers(1)[0]
-                const playerTurnCard = cardDeck?.drawCards(1)[0]
-                const playerTurnJoker = drawRoundJokers(1)[0]
+                const turnCard = cardDeckRef.current?.drawCards(1)[0]
+                const turnJoker = jokerDeckRef.current?.drawCommunityJokers(1)[0]
+                const playerTurnCard = cardDeckRef.current?.drawCards(1)[0]
+                const playerTurnJoker = drawRoundPlayerJokers(prev.playerJokers)
 
                 return {
                     ...prev,
                     phase: Phase.TURN,
                     playerCards: [...prev.playerCards, playerTurnCard].filter((c): c is Card => c !== undefined),
-                    playerJokers: [...prev.playerJokers, playerTurnJoker].filter((j): j is BaseJoker => j !== undefined),
+                    playerJokers: [...prev.playerJokers, ...playerTurnJoker].filter((j): j is BaseJoker => j !== undefined),
                     communityCards: [...prev.communityCards, turnCard].filter((c): c is Card => c !== undefined),
                     communityJokers: [...prev.communityJokers, turnJoker].filter((j): j is BaseJoker => j !== undefined)
                 }
             }
             else if (prev.phase === Phase.TURN) {
-                const riverCard = cardDeck?.drawCards(1)[0]
-                const riverJoker = jokerDeck?.drawCommunityJokers(1)[0]
-                const playerRiverCard = cardDeck?.drawCards(1)[0]
-                const playerRiverJoker = drawRoundJokers(1)[0]
+                const riverCard = cardDeckRef.current?.drawCards(1)[0]
+                const riverJoker = jokerDeckRef.current?.drawCommunityJokers(1)[0]
+                const playerRiverCard = cardDeckRef.current?.drawCards(1)[0]
+                const playerRiverJoker = drawRoundPlayerJokers(prev.playerJokers)
 
                 return {
                     ...prev,
                     phase: Phase.RIVER,
                     playerCards: [...prev.playerCards, playerRiverCard].filter((c): c is Card => c !== undefined),
-                    playerJokers: [...prev.playerJokers, playerRiverJoker].filter((j): j is BaseJoker => j !== undefined),
+                    playerJokers: [...prev.playerJokers, ...playerRiverJoker].filter((j): j is BaseJoker => j !== undefined),
                     communityCards: [...prev.communityCards, riverCard].filter((c): c is Card => c !== undefined),
                     communityJokers: [...prev.communityJokers, riverJoker].filter((j): j is BaseJoker => j !== undefined)
                 }
@@ -207,22 +212,29 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
         })
     }, [gameState])
 
-    const handleRewards = useCallback(() => {
+    const handleRewards = (playerScore: number) => {
         if (!gameState) return
         const playerScores = new Map<string, number>()
-        playerScores.set('1', playerTotalScore)
+        playerScores.set('1', playerScore)
         const rewards = round?.processResults(playerScores)
+        console.log('rewards', rewards, playerScores)
         const playerRewards = rewards?.rewards.get('1') ?? []
         //if rewards cotains a joker add joker to playerJokers
         const hasJokerInReward = playerRewards.filter(reward => reward.type === 'JOKER').length > 0;
         if (hasJokerInReward) {
-            const newPlayerJokers = jokerDeck?.drawPlayerJokers(1) ?? []
-            setPlayerJokers([...playerJokers, ...newPlayerJokers])
+            const newPlayerJokers = jokerDeckRef.current?.drawPlayerJokers(1) ?? []
+            playerJokersRef.current = [
+                ...playerJokersRef.current,
+                ...newPlayerJokers
+            ]
         }
         setRoundRewards(playerRewards)
-    }, [gameState, round])
+    }
 
-    const resetAndStartNewRound = useCallback(() => {
+    const resetAndStartNewRound = () => {
+        const newDeck = Deck.createStandard()
+        newDeck.shuffle()
+        cardDeckRef.current = newDeck
         setPlayerTotalScore(0)
         setCountdownTimeRemaining(COUNTDOWN_TIME)
         setTimeRemaining(ROUND_TIME)       
@@ -233,15 +245,16 @@ export default function GameRoute({ loaderData }: Route.ComponentProps) {
             communityCards:[],
             communityJokers: []
         })
-    }, [handleRoundStart])
+    }
 
 
     // Handle play hand
     const handlePlayHand = (totalScore: number) => {
-        if (!cardDeck || !jokerDeck) return
-        setPlayerTotalScore(playerTotalScore + totalScore)
+        if (!cardDeckRef.current || !jokerDeckRef.current) return
+        const newPlayerTotalScore = playerTotalScore + totalScore
+        setPlayerTotalScore(prev => prev + totalScore)
         if (gameState?.phase === Phase.RIVER) {
-            handleRewards()
+            handleRewards(newPlayerTotalScore)
         }
         handlePhaseEnd()        
     }

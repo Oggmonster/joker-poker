@@ -165,7 +165,7 @@ export function PlayPhase({
             <div className="flex-1 flex flex-col gap-8 items-center">
                 {/* Board Cards */}
                 <div className="flex flex-col gap-4 items-center w-full max-w-4xl">
-                    <div className="text-lg font-bold">Board Cards (select up to 3)</div>
+                    <div className="text-lg font-bold">Board Cards</div>
                     <div className="flex gap-8 justify-center">
                         <div className="flex gap-2">
                             {communityCards.map((card, index) => (
@@ -328,7 +328,7 @@ export function PlayPhase({
                                     selectedCards.length === 5 ? "text-green-400" : "text-gray-400"
                                 )}>
                                     <span>{selectedCards.length}/5</span>
-                                    <span>Board</span>
+                                    <span>Hand</span>
                                 </div>
                                 <div className={cn(
                                     "flex items-center gap-1",
@@ -344,7 +344,7 @@ export function PlayPhase({
 
                 {/* Player's Hole Cards */}
                 <div className="flex flex-col gap-4 items-center w-full max-w-4xl">
-                    <div className="text-lg font-bold">Hole Cards (select 2)</div>
+                    <div className="text-lg font-bold">Hole Cards</div>
                     <div className="flex gap-8 justify-center">
                         <div className="flex gap-2">
                             {playerCards.map((card, index) => (
